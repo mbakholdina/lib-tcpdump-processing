@@ -1,6 +1,6 @@
 A library to process `.pcapng` tcpdump trace file and extract SRT packets of interest for further analysis.
 
-Currently, only .pcapng trace file captured at a receiver side containing only one flow of data is supported. For more complicated use cases, adjustments will be required.
+Currently, only `.pcapng` trace file captured at a receiver side containing only one flow of data is supported. For more complicated use cases, adjustments will be required.
 
 # Getting Started
 
@@ -54,12 +54,13 @@ import tcpdump_processing.extract_packets as extract_packets
 
 ## `extract_packets`
 
-This script parses .pcapng tcpdump trace file captured at a receiver side, saves the output in .csv format nearby the original file, extract packets of interest and saves the obtained dataframe in .csv format nearby the original file.
+This script parses `.pcapng` tcpdump trace file captured at a receiver side, saves the output in `.csv` format nearby the original file, extract packets of interest and saves the obtained dataframe in `.csv` format nearby the original file.
 
 Usage: 
 ```
 extract_packets [OPTIONS] PATH
 ```
+where `PATH` refers to `.pcapng` tcpdump trace file.
 
 Options:
 ```

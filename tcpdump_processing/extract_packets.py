@@ -307,12 +307,14 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	type=click.Choice(PACKET_TYPES),
 	default=PacketTypes.probing.value,
 	help=	'Packet type to extract: SRT (both DATA and CONTROL), SRT DATA, '
-			'SRT DATA probing, or SRT CONTROL UMSG_ACK packets.'
+			'SRT DATA probing, or SRT CONTROL UMSG_ACK packets.',
+	show_default=True
 )
 @click.option(
 	'--save/--no-save',
 	default=False,
-	help='Save dataframe with extracted packets into .csv file.'
+	help='Save dataframe with extracted packets into .csv file.',
+	show_default=True
 )
 def main(path, type, save):
 	"""

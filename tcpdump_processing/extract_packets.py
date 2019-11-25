@@ -77,11 +77,11 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'category',		# _ws.col.Protocol (ws.protocol)
 		'int16',		# _ws.col.Length (ws.length)
 		'object',		# _ws.col.Info (ws.info)
-		'int8',			# srt.iscontrol
+		'float16',		# srt.iscontrol
 		'category',		# srt.type
 		'float64',		# srt.seqno
 		'float16',		# srt.msg.rexmit
-		'int64',		# srt.timestamp
+		'float64',		# srt.timestamp
 		'category',		# srt.id
 		'float64',		# srt.ack_seqno
 		'float64',		# srt.rate
@@ -114,7 +114,9 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'data.len',
 	]
 
-	srt_packets = packets[packets['ws.protocol'] == 'SRT']
+	srt_packets = packets[packets['ws.protocol'] == 'SRT'].copy()
+	srt_packets['srt.iscontrol'] = srt_packets['srt.iscontrol'].astype('int8')
+	srt_packets['srt.timestamp'] = srt_packets['srt.timestamp'].astype('int64')
 
 	return srt_packets
 

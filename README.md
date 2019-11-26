@@ -1,3 +1,5 @@
+# lib-tcpdump-processing
+
 A library designed to process `.pcapng` tcpdump trace file and extract SRT packets of interest for further analysis.
 
 Currently, only `.pcapng` trace file captured at the receiver side containing only one flow of data is supported. For more complicated use cases, adjustments will be required.
@@ -82,7 +84,7 @@ This data is further cleaned and transformed using [pandas](https://pandas.pydat
 1. The data is filtered to extract SRT packets only (`ws.protocol == SRT`) which make sense for further analysis. 
 2. The dataset then is splitted into DATA (`srt.iscontrol == 0`) and CONTROL (`srt.iscontrol == 1`) packets.
 3. For DATA packets , timestamps’ adjustments are done to convert the time from seconds to microseconds using the same procedure as in the protocol. To be precise, the new variable `ws.time.us` is obtained as `(ws.time * 1000000).astype('int64')`.
-4. For DATA packets, the inter-arrival time is calculated as the difference between current and previous packet timestamps and stored as a separate variable `ws.iat.us`. In SRT protocol, the time delta for the first SRT data packet is taken as the difference between time of this data packet and the previous handshake one. Here we assume this value to be equal to 0 for simplicity.
+4. For DATA packets, the inter-arrival time is calculated as the difference between current and previous packet timestamps and stored as a separate variable `ws.iat.us`. Please note that the time delta for the first SRT data packet by default is equal to 0, that's why this packet might probably should be excluded from the analysis.
 5. The type conversion is performed to structure the data in appropriate formats.
 
 The detailed description of dataset variables, Wireshark dissectors and other data is provided in table below. See columns `DATA` and `CONTROL` to check whether the variable is present (`x`) or absent (`-`) in a corresponding dataset.

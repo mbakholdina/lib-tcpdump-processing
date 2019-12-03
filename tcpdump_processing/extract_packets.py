@@ -78,7 +78,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'category',		# _ws.col.Protocol (ws.protocol)
 		'int16',		# _ws.col.Length (ws.length)
 		'object',		# _ws.col.Info (ws.info)
-		'float64',		# udp.length
+		'float16',		# udp.length
 		'float16',		# srt.iscontrol
 		'category',		# srt.type
 		'float64',		# srt.seqno
@@ -120,8 +120,8 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	srt_packets = packets[packets['ws.protocol'] == 'SRT'].copy()
 	srt_packets['srt.iscontrol'] = srt_packets['srt.iscontrol'].astype('int8')
 	srt_packets['srt.timestamp'] = srt_packets['srt.timestamp'].astype('int64')
-	srt_packets['data.len'] = srt_packets['data.len'].fillna(0).astype('int64')
-	srt_packets['udp.length'] = srt_packets['udp.length'].fillna(0).astype('int64')
+	srt_packets['data.len'] = srt_packets['data.len'].fillna(0).astype('int16')
+	srt_packets['udp.length'] = srt_packets['udp.length'].fillna(0).astype('int16')
 
 	return srt_packets
 

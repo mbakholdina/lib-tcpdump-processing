@@ -120,6 +120,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	srt_packets = packets[packets['ws.protocol'] == 'SRT'].copy()
 	srt_packets['srt.iscontrol'] = srt_packets['srt.iscontrol'].astype('int8')
 	srt_packets['srt.timestamp'] = srt_packets['srt.timestamp'].astype('int64')
+	srt_packets['data.len'] = srt_packets['data.len'].fillna(0).astype('int64')
 	srt_packets['udp.length'] = srt_packets['udp.length'].fillna(0).astype('int64')
 
 	return srt_packets

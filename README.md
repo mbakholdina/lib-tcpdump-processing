@@ -98,6 +98,7 @@ The detailed description of dataset variables, Wireshark dissectors and other da
 | ws.protocol       | _ws.col.Protocol       | Protocol                                                   | x          | x         | category   |
 | ws.length         | _ws.col.Length         | Length (bytes)                                             | x          | x         | int16      |
 | ws.info           | _ws.col.Info           | Information                                                | x          | x         | object     |
+| udp.length        | udp.length             | UDP packet size (0 in case of N/A)                         | x          | x         | int16      |
 | srt.iscontrol     | srt.iscontrol          | Content type (CONTROL if 1, DATA if 0)                     | x          | x         | int8       |
 | srt.type          | srt.type               | Message type (e.g. UMSG_ACK, UMSG_ACKACK)                  | -          | x         | category   |
 | srt.seqno         | srt.seqno              | Sequence number                                            | x          | -         | int64      |

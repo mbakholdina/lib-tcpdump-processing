@@ -87,31 +87,31 @@ This data is further cleaned and transformed using [pandas](https://pandas.pydat
 4. For DATA packets, the inter-arrival time is calculated as the difference between current and previous packet timestamps and stored as a separate variable `ws.iat.us`. Please note that the time delta for the first SRT data packet by default is equal to 0, that's why this packet might probably should be excluded from the analysis.
 5. The type conversion is performed to structure the data in appropriate formats.
 
-The detailed description of dataset variables, Wireshark dissectors and other data is provided in table below. See columns `DATA` and `CONTROL` to check whether the variable is present (`x`) or absent (`-`) in a corresponding dataset.
+The detailed description of dataset variables, Wireshark dissectors and other data is provided in table below. See columns `DATA` and `CONTROL` to check whether the variable is present (`✓`) or absent (`-`) in a corresponding dataset.
 
 | Dataset Variable  | Wireshark Dissector    | Description                                                | DATA       | CONTROL   | Data Type  |
 |:------------------|:-----------------------|:-----------------------------------------------------------|:-----------|:----------|:-----------|
-| ws.no             | _ws.col.No.            | Number as registered by Wireshark                          | x          | x         | int64      |
-| ws.time           | _ws.col.Time           | Timestamp as registered by Wireshark (seconds)             | x          | x         | float64    |
-| ws.source         | _ws.col.Source         | Source IP address                                          | x          | x         | category   |
-| ws.destination    | _ws.col.Destination    | Destination IP address                                     | x          | x         | category   |
-| ws.protocol       | _ws.col.Protocol       | Protocol                                                   | x          | x         | category   |
-| ws.length         | _ws.col.Length         | Length (bytes)                                             | x          | x         | int16      |
-| ws.info           | _ws.col.Info           | Information                                                | x          | x         | object     |
-| udp.length        | udp.length             | UDP packet size (0 in case of N/A)                         | x          | x         | int16      |
-| srt.iscontrol     | srt.iscontrol          | Content type (CONTROL if 1, DATA if 0)                     | x          | x         | int8       |
-| srt.type          | srt.type               | Message type (e.g. UMSG_ACK, UMSG_ACKACK)                  | -          | x         | category   |
-| srt.seqno         | srt.seqno              | Sequence number                                            | x          | -         | int64      |
-| srt.msg.rexmit    | srt.msg.rexmit         | Sent as original if 0, retransmitted if 1                  | x          | -         | int8       |
-| srt.timestamp     | srt.timestamp          | Timestamp since the socket was opened (microseconds)       | x          | x         | int64      |
-| srt.id            | srt.id                 | Destination socket id                                      | x          | x         | category   |
-| srt.ack_seqno     | srt.ack_seqno          | First unacknowledged sequence number                       | -          | x         | int64      |
-| srt.rate          | srt.rate               | Receiving speed estimation (packets/s)                     | -          | x         | int64      |
-| srt.bw            | srt.bw                 | Bandwidth estimation (packets/s)                           | -          | x         | int64      |
-| srt.rcvrate       | srt.rcvrate            | Receiving speed estimation (bytes/s)                       | -          | x         | int64      |
-| data.len          | data.len               | Payload size (bytes)                                       | x          | -         | int16      |
-| ws.time.us        | -                      | Timestamp as registered by Wireshark (microseconds)        | x          | -         | int64      |
-| ws.iat.us         | -                      | Packet inter-arrival time (microseconds)                   | x          | -         | int64      |
+| ws.no             | _ws.col.No.            | Number as registered by Wireshark                          | ✓          | ✓         | int64      |
+| ws.time           | _ws.col.Time           | Timestamp as registered by Wireshark (seconds)             | ✓          | ✓         | float64    |
+| ws.source         | _ws.col.Source         | Source IP address                                          | ✓          | ✓         | category   |
+| ws.destination    | _ws.col.Destination    | Destination IP address                                     | ✓          | ✓         | category   |
+| ws.protocol       | _ws.col.Protocol       | Protocol                                                   | ✓          | ✓         | category   |
+| ws.length         | _ws.col.Length         | Length (bytes)                                             | ✓          | ✓         | int16      |
+| ws.info           | _ws.col.Info           | Information                                                | ✓          | ✓         | object     |
+| udp.length        | udp.length             | UDP packet size (bytes)                                    | ✓          | ✓         | int16      |
+| srt.iscontrol     | srt.iscontrol          | Content type (CONTROL if 1, DATA if 0)                     | ✓          | ✓         | int8       |
+| srt.type          | srt.type               | Message type (e.g. UMSG_ACK, UMSG_ACKACK)                  | -          | ✓         | category   |
+| srt.seqno         | srt.seqno              | Sequence number                                            | ✓          | -         | int64      |
+| srt.msg.rexmit    | srt.msg.rexmit         | Sent as original if 0, retransmitted if 1                  | ✓          | -         | int8       |
+| srt.timestamp     | srt.timestamp          | Timestamp since the socket was opened (microseconds)       | ✓          | ✓         | int64      |
+| srt.id            | srt.id                 | Destination socket id                                      | ✓          | ✓         | category   |
+| srt.ack_seqno     | srt.ack_seqno          | First unacknowledged sequence number                       | -          | ✓         | int64      |
+| srt.rate          | srt.rate               | Receiving speed estimation (packets/s)                     | -          | ✓         | int64      |
+| srt.bw            | srt.bw                 | Bandwidth estimation (packets/s)                           | -          | ✓         | int64      |
+| srt.rcvrate       | srt.rcvrate            | Receiving speed estimation (bytes/s)                       | -          | ✓         | int64      |
+| data.len          | data.len               | Payload size or 0 in case of control packets (bytes)       | ✓          | -         | int16      |
+| ws.time.us        | -                      | Timestamp as registered by Wireshark (microseconds)        | ✓          | -         | int64      |
+| ws.iat.us         | -                      | Packet inter-arrival time (microseconds)                   | ✓          | -         | int64      |
 
 ## Probing DATA Packets
 

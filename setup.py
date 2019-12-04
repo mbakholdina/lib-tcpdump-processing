@@ -18,7 +18,8 @@ setup(
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
-            'extract_packets = tcpdump_processing.extract_packets:main'
+            'extract-packets = tcpdump_processing.extract_packets:main',
+            'get-traffic-stats = scripts.get_traffic_stats:main'
         ],
     },
 )

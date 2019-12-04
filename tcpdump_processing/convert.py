@@ -76,6 +76,7 @@ def convert_to_csv(
 		'-e', '_ws.col.Protocol',
 		'-e', '_ws.col.Length',
 		'-e', '_ws.col.Info',
+		'-e', 'udp.length',
 		'-e', 'srt.iscontrol',
 		'-e', 'srt.type',
 		'-e', 'srt.seqno',

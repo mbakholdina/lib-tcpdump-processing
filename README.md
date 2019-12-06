@@ -54,13 +54,15 @@ import tcpdump_processing.extract_packets as extract_packets
 
 # Executable Scripts
 
-## `extract_packets`
+To use the following scripts, please install the library first (see Sec. "Install the library with pip").
 
-This script parses `.pcapng` tcpdump trace file captured at a receiver side, saves the output in `.csv` format nearby the original file, extract packets of interest and saves the obtained dataframe in `.csv` format nearby the original file.
+## `extract-packets`
+
+This script parses `.pcapng` tcpdump trace file captured at a receiver side, saves the output in `.csv` format nearby the original file, extracts packets of interest and saves the obtained dataframe in `.csv` format nearby the original file.
 
 Usage: 
 ```
-extract_packets [OPTIONS] PATH
+extract-packets [OPTIONS] PATH
 ```
 where `PATH` refers to `.pcapng` tcpdump trace file.
 
@@ -74,6 +76,36 @@ Options:
   --save / --no-save              Save dataframe with extracted packets into
                                   .csv file.  [default: False]
   --help                          Show this message and exit.
+```
+
+## `get-traffic-stats`
+
+This script parses `.pcapng` network trace file,  and prints SRT-related traffic statistics, in particular, the overhead of SRT protocol in the transmission. Intermediate data is stored in  `.csv` format nearby the original file.
+
+Usage: 
+
+```
+get-traffic-stats PATH
+```
+
+where `PATH` refers to `.pcapng` tcpdump trace file.
+
+Example output:
+
+```
+SRT Data payload:          6.685 Mbps
+SRT Data overhead:         1.824%
+SRT Data lost:             4.250%
+SRT Data rexmit overhead:  8.857%
+SRT ACK overhead:          0.404%
+SRT ACKACK overhead:       0.404%
+SRT NAK overhead:          0.161%
+===========================================
+SRT overall overhead:      9.630%
+SRT Retransmitted:         8.699% of original packets
+including:
+    retransmitted twice:   3.706% of original packets
+    retransmitted more:    0.372% of original packets
 ```
 
 # Data Preparation

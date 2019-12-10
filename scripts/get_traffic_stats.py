@@ -14,16 +14,31 @@ import tcpdump_processing.extract_packets as extract_packets
 	'path', 
 	type=click.Path(exists=True)
 )
-def main(path):
+@click.option(
+	'--overwrite/--no-overwrite',
+	default=False,
+	help=	'If exists, overwrite the .csv file produced out of the .pcapng '
+			'tcpdump trace one at the previous iterations of running the script.',
+	show_default=True
+)
+def main(path, overwrite):
 	"""
-	Script parses tcpdump trace file captured at the receiver side
-	and extracts packet sizes.
+	This script parses .pcapng tcpdump trace file captured at the receiver side, 
+	collects and outputs network traffic statistics.
 	"""
 	# Process tcpdump trace file and get SRT data packets only
 	# (either all data packets or probing packets only)
 	pcapng_filepath   = pathlib.Path(path)
-	csv_filepath      = convert.convert_to_csv(pcapng_filepath)
-	srt_packets       = extract_packets.extract_srt_packets(csv_filepath)
+	csv_filepath      = convert.convert_to_csv(pcapng_filepath, overwrite)
+	
+	try:
+		srt_packets = extract_packets.extract_srt_packets(csv_filepath)
+	except extract_packets.UnexpectedColumnsNumber as error:
+		print(
+			f'Exception captured: {error} '
+			'Please try running the script with --overwrite option.'
+		)
+		return
 
 	sec_begin         = srt_packets.iloc[0]['ws.time']
 	sec_end           = srt_packets.iloc[-1]['ws.time']

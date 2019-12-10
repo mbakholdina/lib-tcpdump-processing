@@ -23,7 +23,7 @@ venv/bin/python -m tcpdump_processing.extract_packets --help
 
 or use preinstalled executable scripts
 ```
-venv/bin/extract_packets --help
+venv/bin/extract-packets --help
 ```
 
 ## Install the library to import in another project
@@ -62,17 +62,22 @@ This script parses `.pcapng` tcpdump trace file captured at a receiver side, sav
 
 Usage: 
 ```
-extract-packets [OPTIONS] PATH
+venv/bin/extract-packets [OPTIONS] PATH
 ```
 where `PATH` refers to `.pcapng` tcpdump trace file.
 
 Options:
 ```
+Options:
   --type [srt|data|probing|umsg_ack]
                                   Packet type to extract: SRT (both DATA and
                                   CONTROL), SRT DATA, SRT DATA probing, or SRT
                                   CONTROL UMSG_ACK packets.  [default:
                                   probing]
+  --overwrite / --no-overwrite    If exists, overwrite the .csv file produced
+                                  out of the .pcapng tcpdump trace one at the
+                                  previous iterations of running the script.
+                                  [default: False]
   --save / --no-save              Save dataframe with extracted packets into
                                   .csv file.  [default: False]
   --help                          Show this message and exit.
@@ -83,12 +88,19 @@ Options:
 This script parses `.pcapng` network trace file,  and prints SRT-related traffic statistics, in particular, the overhead of SRT protocol in the transmission. Intermediate data is stored in  `.csv` format nearby the original file.
 
 Usage: 
-
 ```
-get-traffic-stats PATH
+venv/bin/get-traffic-stats [OPTIONS] PATH
 ```
-
 where `PATH` refers to `.pcapng` tcpdump trace file.
+
+Options:
+```
+  --overwrite / --no-overwrite  If exists, overwrite the .csv file produced
+                                out of the .pcapng tcpdump trace one at the
+                                previous iterations of running the script.
+                                [default: False]
+  --help                        Show this message and exit.
+```
 
 Example output:
 

@@ -29,6 +29,10 @@ class PacketTypes(AutoName):
 PACKET_TYPES = [name for name, member in PacketTypes.__members__.items()]
 
 
+class UnexpectedColumnsNumber(Exception):
+	pass
+
+
 def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	""" 
 	Extract SRT packets (both DATA and CONTROL) from the .csv
@@ -39,14 +43,18 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 			:class:`pathlib.Path` path to the .csv tcpdump trace file.
 
 	Returns:
-		:class:`pd.DataFrame` dataframe with SRT packets.
+		:class:`pd.DataFrame` dataframe with SRT packets or 
+		an empty dataframe if there is no SRT packets.
 
 	Raises:
-		:exc:`FileDoesNotExist` 
+		:exc:`convert.FileDoesNotExist` 
 			if `filepath` file does not exist.
+		:exc: `UnexpectedColumnsNumber`
+			if the .csv tcpdump trace file contains unexpected 
+			number of columns.
 	"""
 	if not filepath.exists():
-		raise FileDoesNotExist(filepath)
+		raise convert.FileDoesNotExist(filepath)
 
 	columns = [
 		'_ws.col.No.',
@@ -95,6 +103,9 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	columns_types = dict(zip(columns, types))
 	packets = pd.read_csv(filepath, sep=';', dtype=columns_types)
 
+	if len(packets.columns) != 19:
+		raise UnexpectedColumnsNumber(f'Unexpected columns number in .csv file: {filepath}.')
+
 	packets.columns = [
 		'ws.no',
 		'ws.time',
@@ -114,9 +125,11 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'srt.rate',
 		'srt.bw',
 		'srt.rcvrate',
-		'data.len',
+		'data.len'
 	]
 
+	# It's either a dataframe with SRT only packets or an empty dataframe
+	# if there is no SRT packets in packets dataframe
 	srt_packets = packets[packets['ws.protocol'] == 'SRT'].copy()
 	srt_packets['srt.iscontrol'] = srt_packets['srt.iscontrol'].astype('int8')
 	srt_packets['srt.timestamp'] = srt_packets['srt.timestamp'].astype('int64')
@@ -138,7 +151,8 @@ def extract_data_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 			`extract_srt_packets` function.
 
 	Returns:
-		:class:`pd.DataFrame` dataframe with SRT DATA packets.
+		:class:`pd.DataFrame` dataframe with SRT DATA packets or
+		an empty dataframe if there is no DATA packets found.
 	"""
 	columns = [
 		'ws.no',
@@ -166,6 +180,15 @@ def extract_data_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	# data flow. For more complicated use cases, a proper data splitting 
 	# should be implemented.
 	data_grouped = data.groupby(['ws.source', 'ws.destination', 'srt.id'])
+
+	# Return an empty dataframe if there is no DATA packets found
+	if len(data_grouped) == 0:
+		columns += [
+			'ws.time.us',
+			'ws.iat.us'
+		]
+		return pd.DataFrame(columns=columns)
+
 	assert(len(data_grouped) == 1)
 
 	# Calculate packet inter-arrival times
@@ -198,7 +221,8 @@ def extract_probing_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 			`extract_srt_packets` function.
 
 	Returns:
-		:class:`pd.DataFrame` dataframe with SRT probing DATA packets.
+		:class:`pd.DataFrame` dataframe with SRT probing DATA packets or
+		an empty dataframe if there is no probing packets found.
 	"""
 	data = extract_data_packets(srt_packets)
 
@@ -259,7 +283,8 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 			`extract_srt_packets` function.
 
 	Returns:
-		:class:`pd.DataFrame` dataframe with SRT UMSG_ACK CONTROL packets.
+		:class:`pd.DataFrame` dataframe with SRT UMSG_ACK CONTROL packets or
+		an empty dataframe if there is no UMSG_ACK packets found.
 	"""
 	columns = [
 		'ws.no',
@@ -288,6 +313,11 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	# data flow. For more complicated use cases, a proper data splitting 
 	# should be implemented.
 	names = [name for name, _ in grouped if name[len(name) - 1] == '0x00000002']
+
+	# Return an empty dataframe if there is no UMSG_ACK packets found
+	if len(names) == 0:
+		return pd.DataFrame(columns=columns)
+ 
 	assert(len(names) == 1)
 	umsg_ack = grouped.get_group(names[0])
 
@@ -318,12 +348,19 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	show_default=True
 )
 @click.option(
+	'--overwrite/--no-overwrite',
+	default=False,
+	help=	'If exists, overwrite the .csv file produced out of the .pcapng '
+			'tcpdump trace one at the previous iterations of running the script.',
+	show_default=True
+)
+@click.option(
 	'--save/--no-save',
 	default=False,
 	help='Save dataframe with extracted packets into .csv file.',
 	show_default=True
 )
-def main(path, type, save):
+def main(path, type, overwrite, save):
 	"""
 	This script parses .pcapng tcpdump trace file captured at a receiver side,
 	saves the output in .csv format nearby the original file, extract packets 
@@ -332,10 +369,17 @@ def main(path, type, save):
 	"""
 	# Convert .pcapng to .csv tcpdump trace file
 	pcapng_filepath = pathlib.Path(path)	
-	csv_filepath = convert.convert_to_csv(pcapng_filepath)
+	csv_filepath = convert.convert_to_csv(pcapng_filepath, overwrite)
 
 	# Extract packets of interest
-	srt_packets = extract_srt_packets(csv_filepath)
+	try:
+		srt_packets = extract_srt_packets(csv_filepath)
+	except UnexpectedColumnsNumber as error:
+		print(
+			f'Exception captured: {error} '
+			'Please try running the script with --overwrite option.'
+		)
+		return
 
 	if type == PacketTypes.srt.value:
 		packets = srt_packets

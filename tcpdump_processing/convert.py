@@ -98,5 +98,6 @@ def convert_to_csv(
 				f'.pcapng to .csv tcpdump trace file processing failed ',
 				f'with the code: {process.returncode}'
 			)
+	print(f'Processing finished: {csv_filepath}')
 	
 	return csv_filepath

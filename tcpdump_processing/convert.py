@@ -25,7 +25,8 @@ def convert_to_csv(
 	overwrite: bool=False
 ) -> pathlib.Path:
 	""" 
-	Convert .pcapng tcpdump trace file into .csv one.
+	Convert .pcapng tcpdump trace file into .csv one. During conversion,
+	only SRT packets are extracted.
 
 	Attributes:
 		filepath: 
@@ -68,6 +69,7 @@ def convert_to_csv(
 	args = [
 		'tshark',
 		'-r', str(filepath),
+		'-Y', 'srt',					# Extract SRT packets only
 		'-T', 'fields', 
 		'-e', '_ws.col.No.',
 		'-e', '_ws.col.Time',

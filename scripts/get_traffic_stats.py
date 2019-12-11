@@ -40,6 +40,10 @@ def main(path, overwrite):
 		)
 		return
 
+	if srt_packets.empty:
+		print("No SRT packets found.")
+		return
+
 	sec_begin         = srt_packets.iloc[0]['ws.time']
 	sec_end           = srt_packets.iloc[-1]['ws.time']
 	duration_sec      = sec_end - sec_begin

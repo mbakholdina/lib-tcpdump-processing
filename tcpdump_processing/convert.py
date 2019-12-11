@@ -69,6 +69,7 @@ def convert_to_csv(
 	args = [
 		'tshark',
 		'-r', str(filepath),
+		'--disable-protocol', 'udt',	# Disable UDT protocol, otherwise SRT packets will be treated as UDT ones
 		'-Y', 'srt',					# Extract SRT packets only
 		'-T', 'fields', 
 		'-e', '_ws.col.No.',

@@ -9,6 +9,7 @@ Currently, only `.pcapng` trace file captured at the receiver side containing on
 ## Requirements
 
 * python 3.6+
+* tshark, setting up tshark is described [here](https://github.com/mbakholdina/srt-test-runner)
 
 ## Install the library with pip
 

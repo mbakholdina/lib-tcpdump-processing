@@ -180,9 +180,27 @@ def extract_data_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	# data flow. For more complicated use cases, a proper data splitting 
 	# should be implemented.
 	data_grouped = data.groupby(['ws.source', 'ws.destination', 'srt.id'])
-
+	
 	# Return an empty dataframe if there is no DATA packets found
 	if len(data_grouped) == 0:
+		columns += [
+			'ws.time.us',
+			'ws.iat.us'
+		]
+		return pd.DataFrame(columns=columns)
+
+	# TODO: Implement
+	# Return an empty dataframe if there is more than 1 data flow detected
+	if len(data_grouped) > 1:
+		print(
+			'There are more than 1 data flow detected. '
+			'This case is not supported. The groups found are listed below:'
+		)
+
+		for name, group in data_grouped:
+			print(name)
+			print(group)
+
 		columns += [
 			'ws.time.us',
 			'ws.iat.us'
@@ -317,8 +335,22 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	# Return an empty dataframe if there is no UMSG_ACK packets found
 	if len(names) == 0:
 		return pd.DataFrame(columns=columns)
+
+	# TODO: Implement
+	# Return an empty dataframe if there is more than 1 data flow detected
+	if len(names) > 1:
+		print(
+			'There are more than 1 data flow detected. '
+			f'This case is not supported. The groups found are listed below:'
+		)
+
+		for name in names:
+			print(name)
+
+		return pd.DataFrame(columns=columns)
  
 	assert(len(names) == 1)
+
 	umsg_ack = grouped.get_group(names[0])
 
 	# Drop rows with NaN values in srt.rate, srt.bw, srt.rcvrate columns 
@@ -391,6 +423,7 @@ def main(path, type, overwrite, save):
 		packets = extract_umsg_ack_packets(srt_packets)
 
 	# Print the first 20 rows of the dataframe with extracted packets
+	print('The result dataframe is the following:')
 	print(packets.head(20))
 
 	# Save extracted packets to .csv

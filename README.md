@@ -106,19 +106,27 @@ Options:
 Example output:
 
 ```
-SRT Data payload:          6.685 Mbps
+Overall UDP rate:          7.501 Mbps
+SRT Data org+rexmit pld:   7.367 Mbps
+SRT Data org payload:      6.665 Mbps
 SRT Data overhead:         1.824%
-SRT Data lost:             4.250%
-SRT Data rexmit overhead:  8.857%
-SRT ACK overhead:          0.404%
-SRT ACKACK overhead:       0.404%
-SRT NAK overhead:          0.161%
+SRT Data missing:          0.000%
+SRT Data rexmit overhead:  10.723%
+SRT ACK overhead:          0.286%
+SRT ACKACK overhead:       0.286%
+SRT NAK overhead:          0.162%
 ===========================================
-SRT overall overhead:      9.630%
-SRT Retransmitted:         8.699% of original packets
-including:
-    retransmitted twice:   3.706% of original packets
-    retransmitted more:    0.372% of original packets
+SRT overall overhead:       11.325%
+SRT Data packets (org):     19913
+SRT retransmitted:          719 packets (2097 retransmissions)
+SRT DATA retransmisions:    10.531% × DATA packets
+SRT retransmitted:          3.611% of original packets
+    including retransmitted:
+    once:    0.015% of original packets
+    twice:   0.291% of original packets
+    3×:      3.284% of original packets
+    4×:      0.020% of original packets
+    more:    0.000% of original packets
 ```
 
 # Data Preparation

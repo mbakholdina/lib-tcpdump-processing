@@ -73,12 +73,17 @@ def main(path, overwrite):
 	rexmit_pkts['srt.seqno']      = rexmit_pkts['srt.seqno'].astype('int32')
 	rexmit_pkts['seqno']          = rexmit_pkts['srt.seqno']
 	srt_data_rexmits              = rexmit_pkts.groupby(['srt.seqno'])['seqno'].count()
+	srt_data_rex_once_count       = srt_data_rexmits[srt_data_rexmits == 1].count()
 	srt_data_rex_twice_count      = srt_data_rexmits[srt_data_rexmits == 2].count()
-	srt_data_rex_3_and_more_count = srt_data_rexmits[srt_data_rexmits > 2].count()
+	srt_data_rex_3x_count         = srt_data_rexmits[srt_data_rexmits == 3].count()
+	srt_data_rex_4x_count         = srt_data_rexmits[srt_data_rexmits == 4].count()
+	srt_data_rex_5x_more_count    = srt_data_rexmits[srt_data_rexmits > 4].count()
 
-	print(f"SRT Data payload:         {srt_data_org_pld * 8 / duration_sec / 1000000: .3f} Mbps")
+	print(f"Overall UDP rate:         {srt_packets[srt_data_i]['udp.length'].sum() * 8 / duration_sec / 1000000: .3f} Mbps")
+	print(f"SRT Data org+rexmit pld:  {srt_packets[srt_data_i]['data.len'].sum() * 8 / duration_sec / 1000000: .3f} Mbps")
+	print(f"SRT Data org payload:     {srt_data_org_pld * 8 / duration_sec / 1000000: .3f} Mbps")
 	print(f"SRT Data overhead:        {srt_data_org_udp / srt_data_org_pld * 100 - 100: .3f}%")
-	print(f"SRT Data lost:            {srt_data_lost / srt_data_org_count * 100: .3f}%")
+	print(f"SRT Data missing:         {srt_data_lost / srt_data_org_count * 100: .3f}%")
 	print(f"SRT Data rexmit overhead: {srt_data_rex_udp / srt_data_org_pld * 100: .3f}%")
 	print(f"SRT ACK overhead:         {srt_ack_udp / srt_data_org_pld * 100: .3f}%")
 	print(f"SRT ACKACK overhead:      {srt_ack_udp / srt_data_org_pld * 100: .3f}%")
@@ -86,13 +91,21 @@ def main(path, overwrite):
 
 	print("===========================================")
 	srt_overhead_bytes = srt_data_rex_udp + srt_ack_udp + srt_ackack_udp + srt_nak_udp
-	print(f"SRT overall overhead:     {srt_overhead_bytes / srt_data_org_pld * 100: .3f}%")
-	print(f"SRT Retransmitted:        {srt_data_rex_count / srt_data_org_count * 100: .3f}% of original packets")
-	print("including:")
-	print(f"    retransmitted twice:  {srt_data_rex_twice_count / srt_data_org_count * 100: .3f}% of original packets")
-	print(f"    retransmitted more:   {srt_data_rex_3_and_more_count / srt_data_org_count * 100: .3f}% of original packets")
+	print(f"SRT overall overhead:      {srt_overhead_bytes / srt_data_org_pld * 100: .3f}%")
+	print(f"SRT Data packets (org):     {srt_data_org_count}")
+	print(f"SRT retransmitted:          {srt_data_rexmits.count()} packets ({srt_data_rex_count} retransmissions)")
+	print(f"SRT DATA retransmisions:   {srt_data_rex_count / srt_data_org_count * 100: .3f}% × DATA packets")
+	print(f"SRT retransmitted:         {srt_data_rexmits.count() / srt_data_org_count * 100: .3f}% of original packets")
+	#print("Retransmitted = 1x Number once + 2x Number twice + Xx more")
+	print(f"    including retransmitted:")
+	print(f"    once:   {srt_data_rex_once_count / srt_data_org_count * 100: .3f}% of original packets")
+	print(f"    twice:  {srt_data_rex_twice_count / srt_data_org_count * 100: .3f}% of original packets")
+	print(f"    3×:     {srt_data_rex_3x_count / srt_data_org_count * 100: .3f}% of original packets")
+	print(f"    4×:     {srt_data_rex_4x_count / srt_data_org_count * 100: .3f}% of original packets")
+	print(f"    more:   {srt_data_rex_5x_more_count / srt_data_org_count * 100: .3f}% of original packets")
 
 	# TODO: add an option to print packets retransmitted more than once
+	#print(srt_data_rexmits.loc[47383194])
 	#print(srt_data_rexmits[srt_data_rexmits > 1])
 
 

@@ -73,6 +73,7 @@ def convert_to_csv(
 		'-Y', 'srt',					# Extract SRT packets only
 		'-T', 'fields', 
 		'-e', '_ws.col.No.',
+		'-e', 'frame.time',
 		'-e', '_ws.col.Time',
 		'-e', '_ws.col.Source',
 		'-e', '_ws.col.Destination',

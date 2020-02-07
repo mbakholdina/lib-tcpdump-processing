@@ -58,6 +58,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 
 	columns = [
 		'_ws.col.No.',
+		'frame.time',
 		'_ws.col.Time',
 		'_ws.col.Source',
 		'_ws.col.Destination',
@@ -80,6 +81,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 
 	types = [
 		'int64',		# _ws.col.No. (ws.no)
+		'object',		# frame.time
 		'float64',		# _ws.col.Time (ws.time)
 		'category',		# _ws.col.Source (ws.source)
 		'category',		# _ws.col.Destination (ws.destination)
@@ -103,11 +105,12 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	columns_types = dict(zip(columns, types))
 	packets = pd.read_csv(filepath, sep=';', dtype=columns_types)
 
-	if len(packets.columns) != 19:
+	if len(packets.columns) != 20:
 		raise UnexpectedColumnsNumber(f'Unexpected columns number in .csv file: {filepath}.')
 
 	packets.columns = [
 		'ws.no',
+		'frame.time',
 		'ws.time',
 		'ws.source',
 		'ws.destination',
@@ -131,6 +134,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	# It's either a dataframe with SRT only packets or an empty dataframe
 	# if there is no SRT packets in packets dataframe
 	srt_packets = packets[packets['ws.protocol'] == 'SRT'].copy()
+	srt_packets['frame.time'] = pd.to_datetime(srt_packets['frame.time'])
 	srt_packets['srt.iscontrol'] = srt_packets['srt.iscontrol'].astype('int8')
 	srt_packets['srt.timestamp'] = srt_packets['srt.timestamp'].astype('int64')
 	srt_packets['udp.length'] = srt_packets['udp.length'].fillna(0).astype('int16')
@@ -156,6 +160,7 @@ def extract_data_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	"""
 	columns = [
 		'ws.no',
+		'frame.time',
 		'ws.time',
 		'ws.source',
 		'ws.destination',
@@ -269,6 +274,7 @@ def extract_probing_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	
 	columns = [
 		'ws.no',
+		'frame.time',
 		'ws.time',
 		'ws.source',
 		'ws.destination',
@@ -306,6 +312,7 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	"""
 	columns = [
 		'ws.no',
+		'frame.time',
 		'ws.time',
 		'ws.source',
 		'ws.destination',

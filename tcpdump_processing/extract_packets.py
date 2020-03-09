@@ -134,12 +134,12 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	# It's either a dataframe with SRT only packets or an empty dataframe
 	# if there is no SRT packets in packets dataframe
 	srt_packets = packets[packets['ws.protocol'] == 'SRT'].copy()
-	srt_packets['frame.time'] = pd.to_datetime(srt_packets['frame.time'])
+	srt_packets['frame.time'] = pd.to_datetime(srt_packets['frame.time'], format='%b %d, %Y %H:%M:%S.%f %Z')
 	srt_packets['srt.iscontrol'] = srt_packets['srt.iscontrol'].astype('int8')
 	srt_packets['srt.timestamp'] = srt_packets['srt.timestamp'].astype('int64')
 	srt_packets['udp.length'] = srt_packets['udp.length'].fillna(0).astype('int16')
 	srt_packets['data.len'] = srt_packets['data.len'].fillna(0).astype('int16')
-
+	
 	return srt_packets
 
 

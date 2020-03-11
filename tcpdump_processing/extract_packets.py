@@ -1,7 +1,7 @@
 """
-Module designed to extract packets of interest (srt, data, probing, 
-umsg_ack) out of the .pcapng tcpdump trace file. Currently only .pcapng
-file captured at a receiver side and one data flow are supported.
+Module designed to extract packets of interest out of the .pcapng tcpdump
+trace file. Currently only .pcapng trace files with one data flow
+are supported.
 """
 
 import enum
@@ -447,7 +447,7 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 )
 def main(path, type, overwrite, save):
 	"""
-	This script parses .pcapng tcpdump trace file captured at a receiver side,
+	This script parses .pcapng tcpdump trace file,
 	saves the output in .csv format nearby the original file, extract packets 
 	of interest and saves the obtained dataframe in .csv format nearby the 
 	original file.

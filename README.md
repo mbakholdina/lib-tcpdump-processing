@@ -2,7 +2,7 @@
 
 A library designed to process `.pcapng` tcpdump trace file and extract SRT packets of interest for further analysis.
 
-Currently, only `.pcapng` trace file captured at the receiver side containing only one flow of data is supported. For more complicated use cases, adjustments will be required.
+**Important:** Currently, only `.pcapng` trace files containing only one flow of data is supported. To support several data flows, adjustments will be required.
 
 # Getting Started
 
@@ -59,7 +59,7 @@ To use the following scripts, please install the library first (see Sec. "Instal
 
 ## `extract-packets`
 
-This script parses `.pcapng` tcpdump trace file captured at a receiver side, saves the output in `.csv` format nearby the original file, extracts packets of interest and saves the obtained dataframe in `.csv` format nearby the original file.
+This script parses `.pcapng` tcpdump trace file, saves the output in `.csv` format nearby the original file, extracts packets of interest and saves the obtained dataframe in `.csv` format nearby the original file.
 
 Usage: 
 ```
@@ -70,9 +70,10 @@ where `PATH` refers to `.pcapng` tcpdump trace file.
 Options:
 ```
 Options:
-  --type [srt|data|probing|umsg_ack]
+  --type [srt|data|control|probing|umsg_handshake|umsg_ack]
                                   Packet type to extract: SRT (both DATA and
-                                  CONTROL), SRT DATA, SRT DATA probing, or SRT
+                                  CONTROL), SRT DATA, SRT CONTROL, SRT DATA
+                                  probing, SRT CONTROL UMSG_HANDSHAKE, or SRT
                                   CONTROL UMSG_ACK packets.  [default:
                                   probing]
   --overwrite / --no-overwrite    If exists, overwrite the .csv file produced
@@ -211,6 +212,10 @@ SRT Protocol
     Destination Socket ID: 0x1c9ff5e1
     Data (1442 bytes)
 ```
+
+## UMSG_HANDSHAKE CONTROL Packets
+
+UMSG_HANDSHAKE CONTROL packets are extracted from the CONTROL packets dataset using the following criteria: `srt.type == 0x00000000`.
 
 ## UMSG_ACK CONTROL Packets
 

@@ -22,6 +22,7 @@ class AutoName(enum.Enum):
 class PacketTypes(AutoName):
 	srt = enum.auto()
 	data = enum.auto()
+	control = enum.auto()
 	probing = enum.auto()
 	umsg_ack = enum.auto()
 
@@ -232,6 +233,45 @@ def extract_data_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	return data
 
 
+def extract_control_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
+	""" 
+	TODO
+	Extract SRT CONTROL packets from SRT packets (both DATA and CONTROL)
+	`srt_packets` dataframe. 
+	
+	Attributes:
+		srt_packets: 
+			:class:`pd.DataFrame` dataframe with SRT packets (both DATA and 
+			CONTROL) obtained from the .csv tcpdump trace file using
+			`extract_srt_packets` function.
+
+	Returns:
+		:class:`pd.DataFrame` dataframe with SRT CONTROL packets or
+		an empty dataframe if there is no CONTROL packets found.
+	"""
+	columns = [
+		'ws.no',
+		'frame.time',
+		'ws.time',
+		'ws.source',
+		'ws.destination',
+		'ws.protocol',
+		'ws.length',
+		'ws.info',
+		'srt.iscontrol',
+		'srt.type',
+		'srt.timestamp',
+		'srt.id',
+		'srt.ack_seqno',
+		'srt.rate',
+		'srt.bw',
+		'srt.rcvrate',
+	]
+	control = srt_packets.loc[srt_packets['srt.iscontrol'] == 1, columns]
+
+	return control
+
+
 def extract_probing_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	""" 
 	Extract SRT probing DATA packets from SRT packets (both DATA and CONTROL)
@@ -310,25 +350,7 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 		:class:`pd.DataFrame` dataframe with SRT UMSG_ACK CONTROL packets or
 		an empty dataframe if there is no UMSG_ACK packets found.
 	"""
-	columns = [
-		'ws.no',
-		'frame.time',
-		'ws.time',
-		'ws.source',
-		'ws.destination',
-		'ws.protocol',
-		'ws.length',
-		'ws.info',
-		'srt.iscontrol',
-		'srt.type',
-		'srt.timestamp',
-		'srt.id',
-		'srt.ack_seqno',
-		'srt.rate',
-		'srt.bw',
-		'srt.rcvrate',
-	]
-	control = srt_packets.loc[srt_packets['srt.iscontrol'] == 1, columns]
+	control = extract_control_packets(srt_packets)
 
 	# Group data by source, destination, socket id and packet type
 	grouped = control.groupby(['ws.source', 'ws.destination', 'srt.id', 'srt.type'])
@@ -424,6 +446,8 @@ def main(path, type, overwrite, save):
 		packets = srt_packets
 	if type == PacketTypes.data.value:
 		packets = extract_data_packets(srt_packets)
+	if type == PacketTypes.control.value:
+		packets = extract_control_packets(srt_packets)
 	if type == PacketTypes.probing.value:
 		packets = extract_probing_packets(srt_packets)
 	if type == PacketTypes.umsg_ack.value:

@@ -75,6 +75,8 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'srt.timestamp',
 		'srt.id',
 		'srt.ack_seqno',
+		'srt.rtt',
+		'srt.rttvar',
 		'srt.rate',
 		'srt.bw',
 		'srt.rcvrate',
@@ -98,6 +100,8 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'float64',		# srt.timestamp
 		'category',		# srt.id
 		'float64',		# srt.ack_seqno
+		'float64',		# srt.rtt
+		'float64',		# srt.rttvar
 		'float64',		# srt.rate
 		'float64',		# srt.bw
 		'float64',		# srt.rcvrate
@@ -107,7 +111,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	columns_types = dict(zip(columns, types))
 	packets = pd.read_csv(filepath, sep=';', dtype=columns_types)
 
-	if len(packets.columns) != 20:
+	if len(packets.columns) != 22:
 		raise UnexpectedColumnsNumber(f'Unexpected columns number in .csv file: {filepath}.')
 
 	packets.columns = [
@@ -127,6 +131,8 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'srt.timestamp',
 		'srt.id',
 		'srt.ack_seqno',
+		'srt.rtt',
+		'srt.rttvar',
 		'srt.rate',
 		'srt.bw',
 		'srt.rcvrate',
@@ -263,6 +269,8 @@ def extract_control_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 		'srt.timestamp',
 		'srt.id',
 		'srt.ack_seqno',
+		'srt.rtt',
+		'srt.rttvar',
 		'srt.rate',
 		'srt.bw',
 		'srt.rcvrate',
@@ -410,6 +418,8 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 
 	# Convert types
 	umsg_ack['srt.ack_seqno'] = umsg_ack['srt.ack_seqno'].astype('int64')
+	umsg_ack['srt.rtt'] = umsg_ack['srt.rtt'].astype('int64')
+	umsg_ack['srt.rttvar'] = umsg_ack['srt.rttvar'].astype('int64')
 	umsg_ack['srt.rate'] = umsg_ack['srt.rate'].astype('int64')
 	umsg_ack['srt.bw'] = umsg_ack['srt.bw'].astype('int64')
 	umsg_ack['srt.rcvrate'] = umsg_ack['srt.rcvrate'].astype('int64')

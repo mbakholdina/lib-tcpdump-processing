@@ -9,7 +9,7 @@ A library designed to process `.pcapng` tcpdump trace file and extract SRT packe
 ## Requirements
 
 * python 3.6+
-* tshark, setting up tshark is described [here](https://github.com/mbakholdina/srt-test-runner)
+* tshark 3.2.2+, setting up tshark is described [here](https://github.com/mbakholdina/srt-test-runner)
 
 ## Install the library with pip
 
@@ -161,6 +161,8 @@ The detailed description of dataset variables, Wireshark dissectors and other da
 | srt.timestamp     | srt.timestamp          | Timestamp since the socket was opened (microseconds)                     | ✓          | ✓         | int64      |
 | srt.id            | srt.id                 | Destination socket id                                                    | ✓          | ✓         | category   |
 | srt.ack_seqno     | srt.ack_seqno          | First unacknowledged sequence number                                     | -          | ✓         | int64      |
+| srt.rtt           | srt.rtt                | Round Trip Time (RTT) estimation (microseconds)                          | -          | ✓         | int64      |
+| srt.rttvar        | srt.rttvar             | The variance of Round Trip Time (RTT) estimation (microseconds)          | -          | ✓         | int64      |
 | srt.rate          | srt.rate               | Receiving speed estimation (packets/s)                                   | -          | ✓         | int64      |
 | srt.bw            | srt.bw                 | Bandwidth estimation (packets/s)                                         | -          | ✓         | int64      |
 | srt.rcvrate       | srt.rcvrate            | Receiving speed estimation (bytes/s)                                     | -          | ✓         | int64      |

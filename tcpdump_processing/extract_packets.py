@@ -359,8 +359,22 @@ def extract_umsg_handshake_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 		packets or an empty dataframe if there is no UMSG_HANDSHAKE
 		packets found.
 	"""
+	columns = [
+		'ws.no',
+		'frame.time',
+		'ws.time',
+		'ws.source',
+		'ws.destination',
+		'ws.protocol',
+		'ws.length',
+		'ws.info',
+		'srt.iscontrol',
+		'srt.type',
+		'srt.timestamp',
+		'srt.id',
+	]
 	control = extract_control_packets(srt_packets)
-	umsg_handshake = control[control['srt.type'] == '0x00000000']
+	umsg_handshake = control.loc[control['srt.type'] == '0x00000000', columns]
 
 	return umsg_handshake
 

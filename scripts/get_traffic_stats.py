@@ -66,6 +66,10 @@ def main(path, overwrite):
 	org_seqno_diffs     = srt_data_org_seqnos.diff() - 1
 	srt_data_lost       = org_seqno_diffs.sum()
 
+	seqnos = srt_packets[srt_data_i]['srt.seqno'].astype('int32').copy()
+	seqnos = seqnos.drop_duplicates().sort_values()
+	srt_data_pkts_missing = int((seqnos.diff() - 1).sum())
+
 	srt_data_org_count = srt_packets[srt_data_org_i]['udp.length'].count()
 	srt_data_rex_count = srt_packets[srt_data_rexmit_i]['udp.length'].count()
 
@@ -83,7 +87,8 @@ def main(path, overwrite):
 	print(f"SRT Data org+rexmit pld:  {srt_packets[srt_data_i]['data.len'].sum() * 8 / duration_sec / 1000000: .3f} Mbps")
 	print(f"SRT Data org payload:     {srt_data_org_pld * 8 / duration_sec / 1000000: .3f} Mbps")
 	print(f"SRT Data overhead:        {srt_data_org_udp / srt_data_org_pld * 100 - 100: .3f}%")
-	print(f"SRT Data missing:         {srt_data_lost / srt_data_org_count * 100: .3f}%")
+	print(f"SRT Data org missing:     {srt_data_lost / srt_data_org_count * 100: .3f}%")
+	print(f"SRT Data missing (drop):  {srt_data_pkts_missing / srt_data_org_count * 100: .3f}%")
 	print(f"SRT Data rexmit overhead: {srt_data_rex_udp / srt_data_org_pld * 100: .3f}%")
 	print(f"SRT ACK overhead:         {srt_ack_udp / srt_data_org_pld * 100: .3f}%")
 	print(f"SRT ACKACK overhead:      {srt_ack_udp / srt_data_org_pld * 100: .3f}%")

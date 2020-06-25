@@ -55,15 +55,6 @@ class TrafficStats:
 		srt_data_pkts_org_cnt  = self.index.data_pkts_org.sum() # count true values
 		srt_data_pkts_rex_cnt  = self.index.data_pkts_rex.sum() # count true values
 
-		timestamps = self.srt_pkts_data_org[['ws.time', 'srt.timestamp']].copy()
-		timestamps['delta'] = timestamps['srt.timestamp'].diff()
-
-		timestamps.plot(kind='line', x='ws.time', y='delta')
-		plt.show()
-
-		print(timestamps.tail(50))
-		return 
-
 		seqnos_org = self.srt_pkts_data_org['srt.seqno'].astype('int32')
 		srt_pkts_data_org_lost = int((seqnos_org.diff() - 1).sum())
 
@@ -99,6 +90,16 @@ class TrafficStats:
 		print(f"    more:   {to_percent(srt_data_rex_5x_more_count): .2f}% of original packets")
 
 		return
+
+	def print_jitter(self):
+		timestamps = self.srt_pkts_data_org[['ws.time', 'srt.timestamp']].copy()
+		timestamps['delta'] = timestamps['srt.timestamp'].diff()
+
+		timestamps.plot(kind='line', x='ws.time', y='delta')
+		plt.show()
+
+		print(timestamps.tail(50))
+		return 
 
 
 @click.command()

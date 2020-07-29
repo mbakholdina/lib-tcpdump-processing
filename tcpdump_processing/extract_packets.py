@@ -1,6 +1,6 @@
 """
-Module designed to extract packets of interest out of the .pcapng tcpdump
-trace file. Currently only .pcapng trace files with one data flow
+Module designed to extract packets of interest out of the .pcapng or .pcap
+tcpdump trace file. Currently only trace files with one data flow
 are supported.
 """
 
@@ -459,7 +459,7 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 @click.option(
 	'--overwrite/--no-overwrite',
 	default=False,
-	help=	'If exists, overwrite the .csv file produced out of the .pcapng '
+	help=	'If exists, overwrite the .csv file produced out of the .pcapng (or .pcap) '
 			'tcpdump trace one at the previous iterations of running the script.',
 	show_default=True
 )
@@ -471,14 +471,14 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 )
 def main(path, type, overwrite, save):
 	"""
-	This script parses .pcapng tcpdump trace file,
+	This script parses .pcapng or .pcap tcpdump trace file,
 	saves the output in .csv format nearby the original file, extract packets 
 	of interest and saves the obtained dataframe in .csv format nearby the 
 	original file.
 	"""
-	# Convert .pcapng to .csv tcpdump trace file
-	pcapng_filepath = pathlib.Path(path)	
-	csv_filepath = convert.convert_to_csv(pcapng_filepath, overwrite)
+	# Convert .pcapng or .pcap to .csv tcpdump trace file
+	pcap_filepath = pathlib.Path(path)	
+	csv_filepath = convert.convert_to_csv(pcap_filepath, overwrite)
 
 	# Extract packets of interest
 	try:

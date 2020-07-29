@@ -1,14 +1,14 @@
-""" Module designed to convert .pcapng tcpdump trace file into .csv one. """
+""" Module designed to convert .pcapng or .pcap tcpdump trace file into .csv one. """
 
 import pathlib
 import subprocess
 
 
-class IsNotPcapngFile(Exception):
+class IsNotPcapFile(Exception):
 	pass
 
 
-class PcapngProcessingFailed(Exception):
+class PcapProcessingFailed(Exception):
 	pass
 
 
@@ -25,12 +25,12 @@ def convert_to_csv(
 	overwrite: bool=False
 ) -> pathlib.Path:
 	""" 
-	Convert .pcapng tcpdump trace file into .csv one. During conversion,
+	Convert .pcapng or .pcap tcpdump trace file into .csv one. During conversion,
 	only SRT packets are extracted.
 
 	Attributes:
 		filepath: 
-			:class:`pathlib.Path` path to .pcapng file.
+			:class:`pathlib.Path` path to tcpdump trace file.
 		overwrite:
 			True/False if already existing .csv file should be / should
 			not be overwritten.
@@ -41,31 +41,32 @@ def convert_to_csv(
 	Raises:
 		:exc:`FileDoesNotExist` 
 			if `filepath` file does not exist,
-		:exc:`IsNotPcapngFile` 
-			if `filepath` does not correspond to .pcapng file,
-		:exc:`PcapngProcessingFailed` 
-			if .pcapng to .csv file processing was not successful.
+		:exc:`IsNotPcapFile` 
+			if `filepath` does not correspond to .pcapng or .pcap file,
+		:exc:`PcapProcessingFailed` 
+			if tcpdump trace file .csv file processing was not successful.
 	"""
 	if not filepath.exists():
 		raise FileDoesNotExist(filepath)
 
 	filename = filepath.name
 	if not filename.endswith('.pcapng'):
-		raise IsNotPcapngFile(
-			f'{filepath} does not correspond to .pcapng file'
-		)
+		if not filename.endswith('.pcap'):
+			raise IsNotPcapFile(
+				f'{filepath} does not correspond to .pcapng or .pcap file'
+			)
 	name, _ = filename.split('.')
 	csv_filename = name + '.csv'
 	csv_filepath = filepath.parent / csv_filename
 
 	if csv_filepath.exists() and not overwrite:
 		print(
-			f'Skipping .pcapng to .csv tcpdump trace file processing, '
-			f'.csv file already exists: {filepath}.'
+			'Skipping .pcapng (or .pcap) tcpdump trace file processing to '
+			f'.csv, .csv file already exists: {csv_filepath}.'
 		)
 		return csv_filepath	
 
-	print(f'Processing .pcapng to .csv tcpdump trace file: {filepath}')
+	print(f'Processing .pcapng (or .pcap) tcpdump trace file to .csv: {filepath}')
 	args = [
 		'tshark',
 		'-r', str(filepath),
@@ -100,9 +101,9 @@ def convert_to_csv(
 	with csv_filepath.open(mode='w') as f:
 		process = subprocess.run(args, stdout=f)	
 		if process.returncode != 0:
-			raise PcapngProcessingFailed(
-				f'.pcapng to .csv tcpdump trace file processing failed ',
-				f'with the code: {process.returncode}'
+			raise PcapProcessingFailed(
+				'Processing .pcapng (or .pcap) tcpdump trace file to .csv '
+				f'has failed with the code: {process.returncode}'
 			)
 	print(f'Processing finished: {csv_filepath}')
 	

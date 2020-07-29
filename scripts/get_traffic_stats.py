@@ -71,14 +71,12 @@ class TrafficStats:
 		seqnos_org = seqnos_org.drop_duplicates()
 		srt_pkts_data_org_lost = int((seqnos_org.diff() - 1).sum())
 
-		# Calculating dropped packets as the number of packets considered
-		# missing at the receiver. It means nor original, neither
-		# retransmitted packet with a particular sequence number hasn't
-		# reached the destination. Latency is not taken into account,
-		# because it's tricky to do. It's a limitation of the current approach.
+		# The number of packets considered missing at the receiver.
+		# It means nor original, neither retransmitted packet with
+		# a particular sequence number hasn't reached the destination
 		seqnos = self.srt_pkts_data['srt.seqno'].astype('int32').copy()
 		seqnos = seqnos.drop_duplicates().sort_values()
-		srt_data_pkts_droppped = int((seqnos.diff() - 1).sum())
+		srt_data_pkts_missing = int((seqnos.diff() - 1).sum())
 
 		rexmit_pkts                   = self.srt_pkts_data_rex.copy()
 		rexmit_pkts['srt.seqno']      = rexmit_pkts['srt.seqno'].astype('int32')
@@ -114,8 +112,8 @@ class TrafficStats:
 			"  out of SRT DATA pkts"
 		)
 		print(
-			f"  - DATA pkts dropped             {srt_data_pkts_droppped:>26}"
-			f" {to_percent(srt_data_pkts_droppped, data_pkts_org_received_lost):>8}%"
+			f"  - DATA pkts missing             {srt_data_pkts_missing:>26}"
+			f" {to_percent(srt_data_pkts_missing, data_pkts_org_received_lost):>8}%"
 			"  out of original DATA pkts (received+lost)"
 		)
 	
@@ -125,7 +123,7 @@ class TrafficStats:
 		print(f"  - NAK pkts sent                 {srt_ctrl_pkts_nak_cnt:>26}")
 
 		print(
-			f"- Recovered pkts (lost-dropped)   {srt_data_rexmits.count():>26}"
+			f"- Recovered pkts (lost-missing)   {srt_data_rexmits.count():>26}"
 			f" {to_percent(srt_data_rexmits.count(), data_pkts_org_received_lost):>8}%"
 			"  out of original DATA pkts (received+lost)"
 		)
@@ -136,7 +134,7 @@ class TrafficStats:
 		print(f"     4×:                          {srt_data_rex_4x_cnt:>26} {to_percent(srt_data_rex_4x_cnt, data_pkts_org_received_lost):>8}%")
 		print(f"     more:                        {srt_data_rex_5x_more_cnt:>26} {to_percent(srt_data_rex_5x_more_cnt, data_pkts_org_received_lost):>8}%")
 
-		print(" Overhead ".center(70, "~"))
+		print(" Traffic ".center(70, "~"))
 
 		def to_rate(value, duration):
 			return round(value * 8 / duration / 1000000, 2)
@@ -145,18 +143,27 @@ class TrafficStats:
 		sec_end           = self.srt_packets.iloc[-1]['ws.time']
 		duration_sec      = sec_end - sec_begin
 
-		print(f"- UDP DATA (orig+retrans) rate    {to_rate(self.srt_pkts_data['udp.length'].sum(), duration_sec):>31} Mbps")
-		print(f"- SRT DATA (orig+retrans) rate    {to_rate(self.srt_pkts_data['data.len'].sum() + 16 * len(self.srt_pkts_data), duration_sec):>31} Mbps")
-		print(f"- SRT DATA (orig+retrans) payload {to_rate(self.srt_pkts_data['data.len'].sum(), duration_sec):>31} Mbps")
-		print(f"- UDP DATA (orig) rate            {to_rate(self.srt_pkts_data_org['udp.length'].sum(), duration_sec):>31} Mbps")
-		print(f"- SRT DATA (orig) rate            {to_rate(self.srt_pkts_data_org['data.len'].sum() + 16 * len(self.srt_pkts_data_org), duration_sec):>31} Mbps")
-		print(f"- SRT DATA (orig) payload         {to_rate(self.srt_pkts_data_org['data.len'].sum(), duration_sec):>31} Mbps")
+		print(f"- SRT DATA pkts")
+		print(f"  - SRT payload + SRT hdr + UDP hdr (orig+retrans)  {to_rate(self.srt_pkts_data['udp.length'].sum(), duration_sec):>13} Mbps")
+		print(f"  - SRT payload + SRT hdr (orig+retrans)            {to_rate(self.srt_pkts_data['data.len'].sum() + 16 * len(self.srt_pkts_data), duration_sec):>13} Mbps")
+		print(f"  - SRT payload (orig+retrans)                      {to_rate(self.srt_pkts_data['data.len'].sum(), duration_sec):>13} Mbps")
+		print(f"  - SRT payload + SRT hdr + UDP hdr (orig)          {to_rate(self.srt_pkts_data_org['udp.length'].sum(), duration_sec):>13} Mbps")
+		print(f"  - SRT payload + SRT hdr (orig)                    {to_rate(self.srt_pkts_data_org['data.len'].sum() + 16 * len(self.srt_pkts_data_org), duration_sec):>13} Mbps")
+		print(f"  - SRT payload (orig)                              {to_rate(self.srt_pkts_data_org['data.len'].sum(), duration_sec):>13} Mbps")
+		
+		print(" Overhead ".center(70, "~"))
+
+		print(f"- SRT DATA pkts")
 		print(
-			"- SRT DATA (orig) overhead        "
-			f"{round(to_rate(self.srt_pkts_data_org['udp.length'].sum(), duration_sec) * 100 / to_rate(self.srt_pkts_data_org['data.len'].sum(), duration_sec) - 100, 2):>31} %"
-			"     UDP+SRT headers over SRT payload"
+			"  - UDP+SRT headers over SRT payload (orig)"
+			f"{round(to_rate(self.srt_pkts_data_org['udp.length'].sum(), duration_sec) * 100 / to_rate(self.srt_pkts_data_org['data.len'].sum(), duration_sec) - 100, 2):>25} %"
 		)
 
+		print(" Notations ".center(70, "~"))
+		print("pkts - packets")
+		print("hdr - header")
+		print("orig - original")
+		print("retrans - retransmitted")
 
 @click.command()
 @click.argument(

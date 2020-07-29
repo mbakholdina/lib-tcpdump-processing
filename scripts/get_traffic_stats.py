@@ -47,6 +47,10 @@ class TrafficStats:
 	def srt_pkts_data_rex(self):
 		return self.srt_packets[self.index.data_pkts_rex]
 
+	@property
+	def srt_pkts_ctrl(self):
+		return self.srt_packets[self.index.ctrl_pkts]
+
 	def generate_report(self):
 		srt_pkts_cnt           = len(self.srt_packets.index)
 		srt_data_pkts_cnt      = self.index.data_pkts.sum()	    # count true values
@@ -131,6 +135,27 @@ class TrafficStats:
 		print(f"     3×:                          {srt_data_rex_3x_cnt:>26} {to_percent(srt_data_rex_3x_cnt, data_pkts_org_received_lost):>8}%")
 		print(f"     4×:                          {srt_data_rex_4x_cnt:>26} {to_percent(srt_data_rex_4x_cnt, data_pkts_org_received_lost):>8}%")
 		print(f"     more:                        {srt_data_rex_5x_more_cnt:>26} {to_percent(srt_data_rex_5x_more_cnt, data_pkts_org_received_lost):>8}%")
+
+		print(" Overhead ".center(70, "~"))
+
+		def to_rate(value, duration):
+			return round(value * 8 / duration / 1000000, 2)
+
+		sec_begin         = self.srt_packets.iloc[0]['ws.time']
+		sec_end           = self.srt_packets.iloc[-1]['ws.time']
+		duration_sec      = sec_end - sec_begin
+
+		print(f"- UDP DATA (orig+retrans) rate    {to_rate(self.srt_pkts_data['udp.length'].sum(), duration_sec):>31} Mbps")
+		print(f"- SRT DATA (orig+retrans) rate    {to_rate(self.srt_pkts_data['data.len'].sum() + 16 * len(self.srt_pkts_data), duration_sec):>31} Mbps")
+		print(f"- SRT DATA (orig+retrans) payload {to_rate(self.srt_pkts_data['data.len'].sum(), duration_sec):>31} Mbps")
+		print(f"- UDP DATA (orig) rate            {to_rate(self.srt_pkts_data_org['udp.length'].sum(), duration_sec):>31} Mbps")
+		print(f"- SRT DATA (orig) rate            {to_rate(self.srt_pkts_data_org['data.len'].sum() + 16 * len(self.srt_pkts_data_org), duration_sec):>31} Mbps")
+		print(f"- SRT DATA (orig) payload         {to_rate(self.srt_pkts_data_org['data.len'].sum(), duration_sec):>31} Mbps")
+		print(
+			"- SRT DATA (orig) overhead        "
+			f"{round(to_rate(self.srt_pkts_data_org['udp.length'].sum(), duration_sec) * 100 / to_rate(self.srt_pkts_data_org['data.len'].sum(), duration_sec) - 100, 2):>31} %"
+			"     UDP+SRT headers over SRT payload"
+		)
 
 
 @click.command()

@@ -158,12 +158,18 @@ class TrafficStats:
 			"  - UDP+SRT headers over SRT payload (orig)"
 			f"{round(to_rate(self.srt_pkts_data_org['udp.length'].sum(), duration_sec) * 100 / to_rate(self.srt_pkts_data_org['data.len'].sum(), duration_sec) - 100, 2):>25} %"
 		)
+		print(
+			"  - Retransmitted over received(orig)+missing pkts"
+			f"{round(srt_data_pkts_rex_cnt * 100 / (srt_data_pkts_org_cnt + srt_data_pkts_missing), 2):>18} %"
+		)
 
 		print(" Notations ".center(70, "~"))
 		print("pkts - packets")
 		print("hdr - header")
 		print("orig - original")
 		print("retrans - retransmitted")
+
+		print("".center(70, "~"))
 
 @click.command()
 @click.argument(

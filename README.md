@@ -1,17 +1,19 @@
 # lib-tcpdump-processing
 
-A library designed to process `.pcapng` tcpdump trace file and extract SRT packets of interest for further analysis.
+A library designed to process `.pcap` or `.pcapng` tcpdump trace files ([Wireshark](https://www.wireshark.org/) dumps) and extract SRT packets of interest for further analysis.
 
-**Important:** Currently, only `.pcapng` trace files containing only one flow of data is supported. To support several data flows, adjustments will be required.
+**Important:** Currently, trace files containing only one flow of data are supported. To support several data flows, adjustments will be required.
 
-# Getting Started
+**Known Issue:** There is a known [CEST/CST datetime processing issue](https://github.com/mbakholdina/lib-tcpdump-processing/issues/22) which is going to be addressed soon. Until that please apply the changes from [PR #25](https://github.com/mbakholdina/lib-tcpdump-processing/pull/25) to address the issue.
 
-## Requirements
+## Getting Started
+
+### Requirements
 
 * python 3.6+
-* tshark 3.2.2+, setting up tshark is described [here](https://github.com/mbakholdina/srt-test-runner)
+* tshark 3.2.2+, setting up tshark is described [here](https://github.com/mbakholdina/srt-test-runner#setting-up-tshark) and in the SRT CookBook [here](https://srtlab.github.io/srt-cookbook/how-to-articles/how-to-setup-wireshark-for-srt-traffic-analysis/)
 
-## Install the library with pip
+### Install the library with pip
 
 For development, it is recommended 
 * To use `venv` for virtual environments and `pip` for installing the library and any dependencies. This ensures the code and dependencies are isolated from the system Python installation,
@@ -27,7 +29,7 @@ or use preinstalled executable scripts
 venv/bin/extract-packets --help
 ```
 
-## Install the library to import in another project
+### Install the library to import in another project
 
 Install with pip (a venv is recommended), using pip's VCS requirement specifier
 ```
@@ -43,6 +45,11 @@ Remember to quote the full URL to avoid shell expansion in case of direct instal
 
 This installs the version corresponding to the git tag 'v0.1'. You can replace that with a branch name, a commit hash, or a git ref as necessary. See the [pip documentation](https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support) for details.
 
+To install the latest master, use
+```
+git+https://github.com/mbakholdina/lib-tcpdump-processing.git@master#egg=tcpdump_processing
+```
+
 As soon as the library is installed, you can import the whole library
 ```
 import tcpdump_processing
@@ -53,19 +60,19 @@ or a particular module
 import tcpdump_processing.extract_packets as extract_packets
 ```
 
-# Executable Scripts
+## Executable Scripts
 
 To use the following scripts, please install the library first (see Sec. "Install the library with pip").
 
-## `extract-packets`
+### `extract-packets`
 
-This script parses `.pcapng` tcpdump trace file, saves the output in `.csv` format nearby the original file, extracts packets of interest and saves the obtained dataframe in `.csv` format nearby the original file.
+This script parses tcpdump trace file, saves the output in `.csv` format nearby the original file, extracts packets of interest and saves the obtained dataframe in `.csv` format nearby the original file.
 
 Usage: 
 ```
 venv/bin/extract-packets [OPTIONS] PATH
 ```
-where `PATH` refers to `.pcapng` tcpdump trace file.
+where `PATH` refers to `.pcap` or `.pcapng` tcpdump trace file.
 
 Options:
 ```
@@ -76,41 +83,50 @@ Options:
                                   probing, SRT CONTROL UMSG_HANDSHAKE, or SRT
                                   CONTROL UMSG_ACK packets.  [default:
                                   probing]
+
   --overwrite / --no-overwrite    If exists, overwrite the .csv file produced
-                                  out of the .pcapng tcpdump trace one at the
-                                  previous iterations of running the script.
-                                  [default: False]
+                                  out of the .pcapng (or .pcap) tcpdump trace
+                                  one at the previous iterations of running
+                                  the script.  [default: False]
+
   --save / --no-save              Save dataframe with extracted packets into
                                   .csv file.  [default: False]
+
   --help                          Show this message and exit.
 ```
 
-## `get-traffic-stats`
+An example of generated report when extracting `--type srt` packets is the following:
 
-This script parses `.pcapng` network trace file,  and prints SRT-related traffic statistics, in particular, the overhead of SRT protocol in the transmission. Intermediate data is stored in  `.csv` format nearby the original file.
+![extract_packets_report](img/extract_packets_report.png)
+
+### `get-traffic-stats`
+
+This script parses network trace file,  and prints SRT-related traffic statistics, in particular, the overhead of SRT protocol in the transmission. Intermediate data is stored in  `.csv` format nearby the original file.
 
 Usage: 
 ```
 venv/bin/get-traffic-stats [OPTIONS] PATH
 ```
-where `PATH` refers to `.pcapng` tcpdump trace file.
+where `PATH` refers to `.pcap` or `.pcapng` tcpdump trace file.
 
 Options:
 ```
+Options:
   --overwrite / --no-overwrite  If exists, overwrite the .csv file produced
-                                out of the .pcapng tcpdump trace one at the
-                                previous iterations of running the script.
-                                [default: False]
+                                out of the .pcap (or .pcapng) tcpdump trace
+                                one at the previous iterations of running the
+                                script.  [default: False]
+
   --help                        Show this message and exit.
 ```
 
-Generated report:
+An example of generated report is the following:
 
 ![get_traffic_stats_report](img/get_traffic_stats_report.png)
 
-# Data Preparation
+## Data Preparation
 
-`.pcapng` tcpdump trace file with measurements from a certain network interface and port collected at the receiver side is used as a proxy for packets data collected within the protocol. This trace file is further preprocessed in a `.csv` format with timestamp, source IP address, destination IP address, protocol, and other columns and rows representing observations (received packets). 
+Tcpdump trace file with measurements from a certain network interface and port collected at the receiver side is used as a proxy for packets data collected within the protocol. This trace file is further preprocessed in a `.csv` format with timestamp, source IP address, destination IP address, protocol, and other columns and rows representing observations (received packets). 
 
 This data is further cleaned and transformed using [pandas](https://pandas.pydata.org/) in the following way: 
 1. The data is filtered to extract SRT packets only (`ws.protocol == SRT`) which make sense for further analysis. 
@@ -148,7 +164,7 @@ The detailed description of dataset variables, Wireshark dissectors and other da
 | ws.time.us        | -                      | Relative timestamp as registered by Wireshark (microseconds)             | ✓          | -         | int64      |
 | ws.iat.us         | -                      | Packet inter-arrival time (microseconds)                                 | ✓          | -         | int64      |
 
-## Probing DATA Packets
+### Probing DATA Packets
 
 Probing DATA packets are extracted from the DATA packets dataset as follows:
 1. Find all the packet pairs where the latest 4 bits of their sequence numbers (`srt.seqno`) are `0000` and `0001`. The order is important.
@@ -193,18 +209,12 @@ SRT Protocol
     Data (1442 bytes)
 ```
 
-## UMSG_HANDSHAKE CONTROL Packets
+### UMSG_HANDSHAKE CONTROL Packets
 
 UMSG_HANDSHAKE CONTROL packets are extracted from the CONTROL packets dataset using the following criteria: `srt.type == 0x00000000`.
 
-## UMSG_ACK CONTROL Packets
+### UMSG_ACK CONTROL Packets
 
 UMSG_ACK CONTROL packets are extracted from the CONTROL packets dataset as follows: 
 1. Find all the packets with `srt.type == 0x00000002`.
 2. Drop rows with `NaN` values of `srt.rate`, `srt.bw`, and `srt.rcvrate` variables (so called light acknowledgements).
-
-# ToDo
-
-1. Investigate the problem with possible missing data. It’s well-known issue that at high bitrates tshark may skip the data, there should be something to check this (tshark logs, etc.) and then perform missing data imputation.
-2. Investigate the topic with time needed for SRT library to receive and process the packet. This time should be taken into account and tcpdump timestamps may require additional adjustments.
-3. Investigate the case with zero packet inter-arrival time, some adjustments might be required.

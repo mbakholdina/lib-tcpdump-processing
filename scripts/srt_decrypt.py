@@ -1,8 +1,10 @@
+import os
 from cryptography.hazmat.primitives.keywrap import aes_key_unwrap_with_padding, aes_key_unwrap
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.backends import default_backend
-backend = default_backend()
+#from cryptography.hazmat.backends import default_backend
+#backend = default_backend()
+from cryptography.hazmat.backends.openssl import backend
 
 km_mgs = "\x12\x20\x29\x01\x00\x00\x00\x00\x02\x00\x02\x00\x00\x00\x04\x04" \
 "\x3a\x78\x19\x23\x7b\xc1\x8f\xe9\xcd\xe1\x09\x52\x83\xea\x5d\xf8" \
@@ -13,6 +15,17 @@ km_mgs_hex = "12202901000000000200020000000404" \
 "3a7819237bc18fe9cde1095283ea5df8" \
 "ed09743d2e51e97ec2965d9d52d9cea8" \
 "7ca66f11e18d3a73"
+
+def get_salt(msg):
+    b  = bytes.fromhex(msg)
+    SLen = b[15]
+    Salt = 0
+    for i in range(SLen * 4):
+        Salt = (Salt << 8) | b[16 + i]
+
+    bSalt = Salt.to_bytes(SLen * 4, byteorder='big')
+    return bSalt
+
 
 # TODO: Use bitstream (https://pypi.org/project/bitstream/)
 def parse_km_msg(msg):
@@ -54,6 +67,9 @@ def parse_km_msg(msg):
     for i in range(SLen * 4):
         Salt = (Salt << 8) | b[16 + i]
 
+    Wrap_offset = 16 + SLen * 4
+    Wrap = b[Wrap_offset: Wrap_offset + 8 + KLen * 4]
+
     ICV = 0
     ICV_offset = 16 + SLen * 4
     for i in range(8):
@@ -74,6 +90,9 @@ def parse_km_msg(msg):
     print(f"SE: {SE}")
     print(f"SLen: {SLen}")
     print(f"KLen: {KLen}")
+
+    print(f"Wrap[{len(Wrap)}]: 0x{Wrap.hex()}")
+    
 
     print(f"Salt: 0x{Salt:x}")
     bSalt = Salt.to_bytes(SLen * 4, byteorder='big')
@@ -98,11 +117,32 @@ def parse_km_msg(msg):
     bSEK_wrapped = SEK_wrapped.to_bytes(KLen * 4, byteorder='big')
     print(f"SEK_wrapped: 0x{bSEK_wrapped.hex()}")
 
+    # AES_set_decrypt_key on KEK, output: aes_kek
+    # AES_set_decrypt_key(kek, kek_len * 8, aes_key)
+
+    # Then
+    # AES_unwrap_key(aes_kek, NULL, sek, wrap, wraplen)
+
+    # See https://stackoverflow.com/questions/50062663/encryption-decryption-using-aes-cbc-pkcs7padding
+    # for direct calls to OpenSSL
+
     #print(b[0] & 0x80)
-    SEK = aes_key_unwrap_with_padding(KEK, SEK_wrapped.to_bytes(KLen * 4, byteorder='big'), backend=backend)
-    #print(f"SEK: 0x{SEK:x}")
+    SEK = aes_key_unwrap_with_padding(KEK, Wrap, backend=backend)
+    #SEK = aes_key_unwrap_with_padding(KEK, SEK_wrapped.to_bytes(KLen * 4, byteorder='big'), backend=backend)
+    print(f"SEK: 0x{SEK.hex()}")
+
+# https://wizardforcel.gitbooks.io/practical-cryptography-for-developers-book/content/symmetric-key-ciphers/aes-encrypt-decrypt-examples.html
+def aes_uw():
+    import pyaes, pbkdf2, binascii, os, secrets
+
+    # Derive a 256-bit AES encryption key from the password
+    password = "passphrase"
+    passwordSalt = get_salt(km_mgs_hex).hex()
+    key = pbkdf2.PBKDF2(password, passwordSalt).read(32)
+    print('AES encryption key:', binascii.hexlify(key))
 
 #cryptography.hazmat.primitives.keywrap.aes_key_unwrap
 
 #print(km_mgs)
 parse_km_msg(km_mgs_hex)
+#aes_uw()

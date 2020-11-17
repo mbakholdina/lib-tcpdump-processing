@@ -139,8 +139,8 @@ class TrafficStats:
 		def to_rate(value, duration):
 			return round(value * 8 / duration / 1000000, 2)
 
-		sec_begin         = self.srt_packets.iloc[0]['ws.time']
-		sec_end           = self.srt_packets.iloc[-1]['ws.time']
+		sec_begin         = self.srt_pkts_data.iloc[0]['ws.time']
+		sec_end           = self.srt_pkts_data.iloc[-1]['ws.time']
 		duration_sec      = sec_end - sec_begin
 
 		print(f"- SRT DATA pkts")

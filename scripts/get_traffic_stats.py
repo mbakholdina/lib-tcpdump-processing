@@ -63,19 +63,19 @@ class TrafficStats:
 
 		# Calculate the number of lost original data packets as the number
 		# of original data packets that haven't reached the receiver.
-		# Reordering is taken into account, so if a packet is reordered and
-		# comes later, it will not be considered as lost.
+		# Reordered packets are not taken into account, so if a packet is reordered and
+		# comes later, it will not be included into statistic.
 		seqnos_org = self.srt_data_pkts_org['srt.seqno'].astype('int32')
 		# Removing duplicates in received original packets.
 		seqnos_org = seqnos_org.drop_duplicates()
-		srt_data_pkts_org_lost = int((seqnos_org.diff().dropna() - 1).sum())
+		data_pkts_orig_lost_cnt = int((seqnos_org.diff().dropna() - 1).sum())
 
-		# The number of packets considered missing at the receiver.
+		# The number of packets considered unrecovered at the receiver.
 		# It means nor original, neither retransmitted packet with
-		# a particular sequence number hasn't reached the destination
+		# a particular sequence number hasn't reached the destination.
 		seqnos = self.srt_data_pkts['srt.seqno'].astype('int32').copy()
 		seqnos = seqnos.drop_duplicates().sort_values()
-		srt_data_pkts_missing = int((seqnos.diff().dropna() - 1).sum())
+		data_pkts_unrecovered_cnt = int((seqnos.diff().dropna() - 1).sum())
 
 		# Calculate how much packets were retransmitted once, twice, 3x times, etc.
 		# If there was no dropped packets, rexmits = the number of recovered packets
@@ -92,52 +92,63 @@ class TrafficStats:
 		def to_percent(value, base):
 			return round(value / base * 100, 2)
 
-		data_pkts_org_received_lost = srt_data_pkts_org_cnt + srt_data_pkts_org_lost
+		data_pkts_orig_rcvd_lost_cnt = srt_data_pkts_org_cnt + data_pkts_orig_lost_cnt
 
 		print(" SRT Packets ".center(70, "~"))
 
-		print(f"- SRT pkts                        {srt_pkts_cnt:>26}")		
+		print(f"- SRT DATA+CONTROL pkts           {srt_pkts_cnt:>26}")
+
 		print(f"- SRT DATA pkts                   {srt_data_pkts_cnt:>26}")
 		print(
 			f"  - Original DATA pkts received   {srt_data_pkts_org_cnt:>26}"
 			f" {to_percent(srt_data_pkts_org_cnt, srt_data_pkts_cnt):>8}%"
 			"  out of SRT DATA pkts"
 		)
+		
 		print(
-			f"  - Original DATA pkts lost       {srt_data_pkts_org_lost:>26}"
-			f" {to_percent(srt_data_pkts_org_lost, data_pkts_org_received_lost):>8}%"
-			"  out of original DATA pkts (received+lost)"
-		)
-		print(
-			f"  - Retransmitted DATA pkts received       {srt_data_pkts_rex_cnt:>26}"
+			f"  - Retransmitted DATA pkts received       {srt_data_pkts_rex_cnt:>17}"
 			f" {to_percent(srt_data_pkts_rex_cnt, srt_data_pkts_cnt):>8}%"
 			"  out of SRT DATA pkts"
 		)
-		print("DATA packets recovered")
+		rex_5x_more_total = srt_data_pkts_rex_cnt - (rex_once_cnt + rex_twice_cnt * 2 + rex_3x_cnt * 3 + rex_4x_cnt * 4)
+		tmp = str(rex_once_cnt) + '(' + str(rex_once_cnt) + ')'
+		tmp2 = str(rex_twice_cnt) + '(' + str(rex_twice_cnt * 2) + ')'
+		tmp3 = str(rex_3x_cnt) + '(' + str(rex_3x_cnt * 3) + ')'
+		tmp4 = str(rex_4x_cnt) + '(' + str(rex_4x_cnt * 4) + ')'
+		tmp_more = str(rex_5x_more_cnt) + '(' + str(rex_5x_more_total) + ')'
+		print(f"       once:         {tmp:>39} {to_percent(rex_once_cnt, srt_data_pkts_cnt):>8}%")
+		print(f"       twice:        {tmp2:>39} {to_percent(rex_twice_cnt * 2, srt_data_pkts_cnt):>8}%")
+		print(f"       3×:           {tmp3:>39} {to_percent(rex_3x_cnt * 3, srt_data_pkts_cnt):>8}%")
+		print(f"       4×:           {tmp4:>39} {to_percent(rex_4x_cnt * 4, srt_data_pkts_cnt):>8}%")
+		print(f"       more:         {tmp_more:>39} {to_percent(rex_5x_more_total, srt_data_pkts_cnt):>8}%")
+
 		print(
-			f"  - DATA pkts missing             {srt_data_pkts_missing:>26}"
-			f" {to_percent(srt_data_pkts_missing, data_pkts_org_received_lost):>8}%"
+			f"  - Original DATA pkts lost       {data_pkts_orig_lost_cnt:>26}"
+			f" {to_percent(data_pkts_orig_lost_cnt, data_pkts_orig_rcvd_lost_cnt):>8}%"
 			"  out of original DATA pkts (received+lost)"
 		)
-	
+
+		print(
+			f"  - DATA pkts unrecovered           {data_pkts_unrecovered_cnt:>24}"
+			f" {to_percent(data_pkts_unrecovered_cnt, data_pkts_orig_rcvd_lost_cnt):>8}%"
+			"  out of original DATA pkts (received+lost)"
+		)
+
+		data_pkts_recovered_cnt = data_pkts_orig_lost_cnt - data_pkts_unrecovered_cnt
+		print(
+			f"  - DATA pkts recovered (lost-unrecovered)   {data_pkts_recovered_cnt:>15}"
+			f" {to_percent(data_pkts_recovered_cnt, data_pkts_orig_rcvd_lost_cnt):>8}%"
+			"  out of original DATA pkts (received+lost)"
+		)
+
 		print(f"- SRT CONTROL pkts                {srt_ctrl_pkts_cnt:>26}")
 		print(f"  - ACK pkts sent                 {srt_ctrl_pkts_ack_cnt:>26}")
 		print(f"  - ACKACK pkts received          {srt_ctrl_pkts_ackack_cnt:>26}")
 		print(f"  - NAK pkts sent                 {srt_ctrl_pkts_nak_cnt:>26}")
 
-		# print(
-		# 	f"- Recovered pkts (lost-missing)   {rexmits.count():>26}"
-		# 	f" {to_percent(rexmits.count(), data_pkts_org_received_lost):>8}%"
-		# 	"  out of original DATA pkts (received+lost)"
-		# )
+		
 
-		# TODO Check the delimeter
-		print("  Retransmitted")
-		print(f"     once:                        {rex_once_cnt:>26} {to_percent(rex_once_cnt, data_pkts_org_received_lost):>8}%")
-		print(f"     twice:                       {rex_twice_cnt:>26} {to_percent(rex_twice_cnt, data_pkts_org_received_lost):>8}%")
-		print(f"     3×:                          {rex_3x_cnt:>26} {to_percent(rex_3x_cnt, data_pkts_org_received_lost):>8}%")
-		print(f"     4×:                          {rex_4x_cnt:>26} {to_percent(rex_4x_cnt, data_pkts_org_received_lost):>8}%")
-		print(f"     more:                        {rex_5x_more_cnt:>26} {to_percent(rex_5x_more_cnt, data_pkts_org_received_lost):>8}%")
+		
 
 		return
 

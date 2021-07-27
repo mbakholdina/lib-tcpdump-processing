@@ -2,6 +2,15 @@
 
 **`lib-tcpdump-processing`** is a library designed to process `.pcap(ng)` [tcpdump](https://www.tcpdump.org/) or [Wireshark](https://www.wireshark.org/) trace files and extract [SRT](https://github.com/Haivision/srt) packets of interest for further analysis.
 
+It also helps to process a network trace file and generate a report with SRT related statistics, in particular,
+- The number of SRT DATA and CONTROL packets present in a dump,
+- Original DATA packets received, lost, recovered, and unrecovered,
+- Retransmitted DATA packets received and the number of packets retransmitted once, twice, 3x or more times,
+- The information about CONTROL packets (ACK, ACKACK, and NAK packets),
+- And other important information.
+
+See [`get-traffic-stats`](#get-traffic-stats) script for details and report example.
+
 **Important:** Currently, trace files containing only one flow of data are supported. To support several data flows adjustments will be required.
 
 **Known Issue:** There is a known [CEST/CST datetime processing issue](https://github.com/mbakholdina/lib-tcpdump-processing/issues/22) which is going to be addressed soon. Until then please apply the changes from [PR #25](https://github.com/mbakholdina/lib-tcpdump-processing/pull/25) to address the issue.

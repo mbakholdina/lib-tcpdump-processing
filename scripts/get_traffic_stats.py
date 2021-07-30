@@ -102,7 +102,7 @@ class TrafficStats:
 		print(
 			f"  - Original DATA pkts received   {data_pkts_org_cnt:>26}"
 			f" {to_percent(data_pkts_org_cnt, data_pkts_cnt):>8}%"
-			"  out of SRT DATA pkts"
+			"  out of orig+retrans received DATA pkts"
 		)
 		
 		rex_5x_more_total = data_pkts_rex_cnt - (rex_once_cnt + rex_twice_cnt * 2 + rex_3x_cnt * 3 + rex_4x_cnt * 4)
@@ -110,17 +110,17 @@ class TrafficStats:
 		tmp2 = str(rex_twice_cnt) + '(' + str(rex_twice_cnt * 2) + ')'
 		tmp3 = str(rex_3x_cnt) + '(' + str(rex_3x_cnt * 3) + ')'
 		tmp4 = str(rex_4x_cnt) + '(' + str(rex_4x_cnt * 4) + ')'
-		tmp_more = str(rex_5x_more_cnt) + '(' + str(rex_5x_more_total) + ')'
+		tmp_5plus = str(rex_5x_more_cnt) + '(' + str(rex_5x_more_total) + ')'
 		print(
 			f"  - Retransmitted DATA pkts received       {data_pkts_rex_cnt:>17}"
 			f" {to_percent(data_pkts_rex_cnt, data_pkts_cnt):>8}%"
-			"  out of SRT DATA pkts"
+			"  out of orig+retrans received DATA pkts"
 		)
 		print(f"      Once   {tmp:>47} {to_percent(rex_once_cnt, data_pkts_cnt):>8}%")
 		print(f"      Twice  {tmp2:>47} {to_percent(rex_twice_cnt * 2, data_pkts_cnt):>8}%")
 		print(f"      3×     {tmp3:>47} {to_percent(rex_3x_cnt * 3, data_pkts_cnt):>8}%")
 		print(f"      4×     {tmp4:>47} {to_percent(rex_4x_cnt * 4, data_pkts_cnt):>8}%")
-		print(f"      more   {tmp_more:>47} {to_percent(rex_5x_more_total, data_pkts_cnt):>8}%")
+		print(f"      5+     {tmp_5plus:>47} {to_percent(rex_5x_more_total, data_pkts_cnt):>8}%")
 
 		# The percentage of original DATA packets lost is calculated out of
 		# original DATA packets (received + lost) which equals sent unique
@@ -129,7 +129,7 @@ class TrafficStats:
 		print(
 			f"  - Original DATA pkts lost       {data_pkts_orig_lost_cnt:>26}"
 			f" {to_percent(data_pkts_orig_lost_cnt, data_pkts_orig_rcvd_lost_cnt):>8}%"
-			"  out of original (received+lost) DATA pkts"
+			"  out of orig received+lost DATA pkts"
 		)
 		print(
 			f"      Recovered pkts  {data_pkts_recovered_cnt:>38}"

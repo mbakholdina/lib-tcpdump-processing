@@ -2,11 +2,20 @@
 
 **`lib-tcpdump-processing`** is a library designed to process `.pcap(ng)` [tcpdump](https://www.tcpdump.org/) or [Wireshark](https://www.wireshark.org/) trace files and extract [SRT](https://github.com/Haivision/srt) packets of interest for further analysis.
 
+It also helps to process a network trace file and generate a report with SRT related statistics. In particular, the following statistics are calculated at the receiver side:
+- the number of SRT DATA and CONTROL packets present in a dump,
+- original DATA packets received, lost, recovered, and unrecovered,
+- retransmitted DATA packets received and the amount of packets retransmitted once, twice, 3 times, or more,
+- The information about CONTROL (ACK, ACKACK, and NAK) packets,
+- and other relevant information.
+
+See the [`get-traffic-stats`](#get-traffic-stats) script for details and report examples.
+
 **Important:** Currently, trace files containing only one flow of data are supported. To support several data flows adjustments will be required.
 
 **Known Issue:** There is a known [CEST/CST datetime processing issue](https://github.com/mbakholdina/lib-tcpdump-processing/issues/22) which is going to be addressed soon. Until then please apply the changes from [PR #25](https://github.com/mbakholdina/lib-tcpdump-processing/pull/25) to address the issue.
 
-## Getting Started
+## 1. Getting Started
 
 ### Requirements
 
@@ -60,7 +69,7 @@ or a particular module:
 import tcpdump_processing.extract_packets as extract_packets
 ```
 
-## Executable Scripts
+## 2. Executable Scripts
 
 To use the following scripts, please install the library first (see the [Install the library with pip](#install-the-library-with-pip) section).
 
@@ -101,32 +110,37 @@ Here is an example of the report generated when extracting `--type srt` packets:
 
 ### `get-traffic-stats`
 
-This script parses a network trace file and prints SRT-related traffic statistics, in particular the SRT protocol overhead in the transmission. Intermediate data is stored in  `.csv` format in the same directory as the original file.
+This script helps to process a network `.pcap(ng)` trace file and generate a report with SRT related statistics. Intermediate data is stored in `.csv` format in the same directory as the original file. Both sender and receiver side dumps are supported.
 
-Usage: 
+Usage:
 ```
 venv/bin/get-traffic-stats [OPTIONS] PATH
 ```
-where `PATH` refers to `.pcap` or `.pcapng` tcpdump trace file.
+where `PATH` refers to `.pcap(ng)` file.
 
 Options:
 ```
 Options:
+  --side [snd|rcv]              The side .pcap(ng) file was collected at.
+                                [required]
   --overwrite / --no-overwrite  If exists, overwrite the .csv file produced
-                                out of the .pcap (or .pcapng) tcpdump trace
-                                one at the previous iterations of running the
-                                script.  [default: False]
-
+                                out of the .pcap(ng) one at the previous
+                                iterations of running the script.  [default:
+                                no-overwrite]
   --help                        Show this message and exit.
 ```
 
-Here is an example of the report generated:
+Here is an example of the report generated at the sender side:
 
-![get_traffic_stats_report](img/get_traffic_stats_report.png)
+![get_traffic_stats_report_snd](img/get_traffic_stats_report_snd.png)
 
-## Data Preparation
+Here is an example of the report generated at the receiver side:
 
-A `.pcap(ng)` trace file with measurements from a specific network interface and port collected at the receiver side is used as a proxy for packet data collected by SRT. This trace file is preprocessed in `.csv` format with timestamp, source IP address, destination IP address, protocol, and other columns and rows representing observations (received packets).
+![get_traffic_stats_report_rcv](img/get_traffic_stats_report_rcv.png)
+
+## 3. Data Preparation
+
+A `.pcap(ng)` trace file with measurements from a specific network interface and port collected at the sender/receiver side is used as a proxy for packet data collected by SRT. This trace file is preprocessed in `.csv` format with timestamp, source IP address, destination IP address, protocol, and other columns and rows representing observations (sent/received packets).
 
 This data is further cleaned and transformed using [pandas](https://pandas.pydata.org/) in the following way:
 1. The data is filtered to extract SRT packets only (`ws.protocol == SRT`), which makes sense for further analysis.
@@ -155,11 +169,11 @@ The detailed description of dataset variables, tcpdump/Wireshark dissectors and 
 | srt.timestamp     | srt.timestamp          | Timestamp since the socket was opened (microseconds)                     | ✓          | ✓         | int64      |
 | srt.id            | srt.id                 | Destination socket id                                                    | ✓          | ✓         | category   |
 | srt.ack_seqno     | srt.ack_seqno          | First unacknowledged sequence number                                     | -          | ✓         | int64      |
-| srt.rtt           | srt.rtt                | Round Trip Time (RTT) estimate (microseconds)                          | -          | ✓         | int64      |
-| srt.rttvar        | srt.rttvar             | The variance of Round Trip Time (RTT) estimate (microseconds)          | -          | ✓         | int64      |
-| srt.rate          | srt.rate               | Receiving speed estimate (packets/s)                                   | -          | ✓         | int64      |
-| srt.bw            | srt.bw                 | Bandwidth estimate (packets/s)                                         | -          | ✓         | int64      |
-| srt.rcvrate       | srt.rcvrate            | Receiving speed estimate (bytes/s)                                     | -          | ✓         | int64      |
+| srt.rtt           | srt.rtt                | Round Trip Time (RTT) estimate (microseconds)                            | -          | ✓         | int64      |
+| srt.rttvar        | srt.rttvar             | The variance of Round Trip Time (RTT) estimate (microseconds)            | -          | ✓         | int64      |
+| srt.rate          | srt.rate               | Receiving speed estimate (packets/s)                                     | -          | ✓         | int64      |
+| srt.bw            | srt.bw                 | Bandwidth estimate (packets/s)                                           | -          | ✓         | int64      |
+| srt.rcvrate       | srt.rcvrate            | Receiving speed estimate (bytes/s)                                       | -          | ✓         | int64      |
 | data.len          | data.len               | Payload size or 0 in case of control packets (bytes)                     | ✓          | -         | int16      |
 | ws.time.us        | -                      | Relative timestamp as registered by Wireshark (microseconds)             | ✓          | -         | int64      |
 | ws.iat.us         | -                      | Packet inter-arrival time (microseconds)                                 | ✓          | -         | int64      |

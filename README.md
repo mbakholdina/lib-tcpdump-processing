@@ -1,78 +1,78 @@
 # lib-tcpdump-processing
 
-A library designed to process `.pcap` or `.pcapng` tcpdump trace files ([Wireshark](https://www.wireshark.org/) dumps) and extract SRT packets of interest for further analysis.
+**`lib-tcpdump-processing`** is a library designed to process `.pcap(ng)` [tcpdump](https://www.tcpdump.org/) or [Wireshark](https://www.wireshark.org/) trace files and extract [SRT](https://github.com/Haivision/srt) packets of interest for further analysis.
 
-**Important:** Currently, trace files containing only one flow of data are supported. To support several data flows, adjustments will be required.
+**Important:** Currently, trace files containing only one flow of data are supported. To support several data flows adjustments will be required.
 
-**Known Issue:** There is a known [CEST/CST datetime processing issue](https://github.com/mbakholdina/lib-tcpdump-processing/issues/22) which is going to be addressed soon. Until that please apply the changes from [PR #25](https://github.com/mbakholdina/lib-tcpdump-processing/pull/25) to address the issue.
+**Known Issue:** There is a known [CEST/CST datetime processing issue](https://github.com/mbakholdina/lib-tcpdump-processing/issues/22) which is going to be addressed soon. Until then please apply the changes from [PR #25](https://github.com/mbakholdina/lib-tcpdump-processing/pull/25) to address the issue.
 
 ## Getting Started
 
 ### Requirements
 
 * python 3.6+
-* tshark 3.2.2+, setting up tshark is described [here](https://github.com/mbakholdina/srt-test-runner#setting-up-tshark) and in the SRT CookBook [here](https://srtlab.github.io/srt-cookbook/how-to-articles/how-to-setup-wireshark-for-srt-traffic-analysis/)
+* tshark 3.2.2+ (setting up tshark is described [here](https://github.com/mbakholdina/srt-test-runner#setting-up-tshark) and in the SRT CookBook [here](https://srtlab.github.io/srt-cookbook/how-to-articles/how-to-setup-wireshark-for-srt-traffic-analysis/))
 
 ### Install the library with pip
 
-For development, it is recommended 
-* To use `venv` for virtual environments and `pip` for installing the library and any dependencies. This ensures the code and dependencies are isolated from the system Python installation,
-* To install the library in “editable” mode by running from the same directory `pip install -e .`. This lets changing the source code (both tests and library) and rerunning tests against library code at will. For regular installation, use `pip install .`.
+For development, it is recommended to:
+* use `venv` for virtual environments and `pip` for installing the library and any dependencies. This ensures the code and dependencies are isolated from the system Python installation,
+* install the library in “editable” mode by running `pip install -e .` from the same directory. This allows changing the source code (both tests and library) and rerunning tests against library code at will. For regular installation, use `pip install .`.
 
-As soon as the library is installed, you can run modules directly
+As soon as the library is installed, you can run modules directly:
 ```
 venv/bin/python -m tcpdump_processing.extract_packets --help
 ```
 
-or use preinstalled executable scripts
+or use preinstalled executable scripts:
 ```
 venv/bin/extract-packets --help
 ```
 
 ### Install the library to import in another project
 
-Install with pip (a venv is recommended), using pip's VCS requirement specifier
+Install with `pip` (a `venv` is recommended), using the `pip` VCS requirement specifier:
 ```
 pip install 'git+https://github.com/mbakholdina/lib-tcpdump-processing.git@v0.1#egg=tcpdump_processing'
 ```
 
-or simply put the following row in `requirements.txt`
+or simply put the following row in `requirements.txt`:
 ```
 git+https://github.com/mbakholdina/lib-tcpdump-processing.git@v0.1#egg=tcpdump_processing
 ```
 
-Remember to quote the full URL to avoid shell expansion in case of direct installation.
+Remember to quote the full URL to avoid shell expansion in the case of direct installation.
 
 This installs the version corresponding to the git tag 'v0.1'. You can replace that with a branch name, a commit hash, or a git ref as necessary. See the [pip documentation](https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support) for details.
 
-To install the latest master, use
+To install the latest master, use:
 ```
 git+https://github.com/mbakholdina/lib-tcpdump-processing.git@master#egg=tcpdump_processing
 ```
 
-As soon as the library is installed, you can import the whole library
+As soon as the library is installed, you can import the whole library:
 ```
 import tcpdump_processing
 ```
 
-or a particular module
+or a particular module:
 ```
 import tcpdump_processing.extract_packets as extract_packets
 ```
 
 ## Executable Scripts
 
-To use the following scripts, please install the library first (see Sec. "Install the library with pip").
+To use the following scripts, please install the library first (see the [Install the library with pip](#install-the-library-with-pip) section).
 
 ### `extract-packets`
 
-This script parses tcpdump trace file, saves the output in `.csv` format nearby the original file, extracts packets of interest and saves the obtained dataframe in `.csv` format nearby the original file.
+This script parses `.pcap(ng)` trace file, saves the output in `.csv` format in the same directory as the original file, extracts packets of interest, and saves the obtained dataframe in `.csv` format in the same directory as the original file.
 
-Usage: 
+Usage:
 ```
 venv/bin/extract-packets [OPTIONS] PATH
 ```
-where `PATH` refers to `.pcap` or `.pcapng` tcpdump trace file.
+where `PATH` refers to `.pcap(ng)` file.
 
 Options:
 ```
@@ -95,13 +95,13 @@ Options:
   --help                          Show this message and exit.
 ```
 
-An example of generated report when extracting `--type srt` packets is the following:
+Here is an example of the report generated when extracting `--type srt` packets:
 
 ![extract_packets_report](img/extract_packets_report.png)
 
 ### `get-traffic-stats`
 
-This script parses network trace file,  and prints SRT-related traffic statistics, in particular, the overhead of SRT protocol in the transmission. Intermediate data is stored in  `.csv` format nearby the original file.
+This script parses a network trace file and prints SRT-related traffic statistics, in particular the SRT protocol overhead in the transmission. Intermediate data is stored in  `.csv` format in the same directory as the original file.
 
 Usage: 
 ```
@@ -120,22 +120,22 @@ Options:
   --help                        Show this message and exit.
 ```
 
-An example of generated report is the following:
+Here is an example of the report generated:
 
 ![get_traffic_stats_report](img/get_traffic_stats_report.png)
 
 ## Data Preparation
 
-Tcpdump trace file with measurements from a certain network interface and port collected at the receiver side is used as a proxy for packets data collected within the protocol. This trace file is further preprocessed in a `.csv` format with timestamp, source IP address, destination IP address, protocol, and other columns and rows representing observations (received packets). 
+A `.pcap(ng)` trace file with measurements from a specific network interface and port collected at the receiver side is used as a proxy for packet data collected by SRT. This trace file is preprocessed in `.csv` format with timestamp, source IP address, destination IP address, protocol, and other columns and rows representing observations (received packets).
 
-This data is further cleaned and transformed using [pandas](https://pandas.pydata.org/) in the following way: 
-1. The data is filtered to extract SRT packets only (`ws.protocol == SRT`) which make sense for further analysis. 
-2. The dataset then is splitted into DATA (`srt.iscontrol == 0`) and CONTROL (`srt.iscontrol == 1`) packets.
-3. For DATA packets , timestamps’ adjustments are done to convert the time from seconds to microseconds using the same procedure as in the protocol. To be precise, the new variable `ws.time.us` is obtained as `(ws.time * 1000000).astype('int64')`.
-4. For DATA packets, the inter-arrival time is calculated as the difference between current and previous packet timestamps and stored as a separate variable `ws.iat.us`. Please note that the time delta for the first SRT data packet by default is equal to 0, that's why this packet might probably should be excluded from the analysis.
-5. The type conversion is performed to structure the data in appropriate formats.
+This data is further cleaned and transformed using [pandas](https://pandas.pydata.org/) in the following way:
+1. The data is filtered to extract SRT packets only (`ws.protocol == SRT`), which makes sense for further analysis.
+2. The dataset then is split into DATA (`srt.iscontrol == 0`) and CONTROL (`srt.iscontrol == 1`) packets.
+3. For DATA packets, timestamps are converted from seconds to microseconds using the same procedure as in the protocol. To be precise, the new variable `ws.time.us` is obtained as `(ws.time * 1000000).astype('int64')`.
+4. For DATA packets, the inter-arrival time is calculated as the difference between current and previous packet timestamps and stored as a separate variable `ws.iat.us`. Please note that the time delta for the first SRT data packet by default is equal to 0. That's why this packet should probably be excluded from the analysis.
+5. Type conversion is performed to structure the data in appropriate formats.
 
-The detailed description of dataset variables, Wireshark dissectors and other data is provided in table below. See columns `DATA` and `CONTROL` to check whether the variable is present (`✓`) or absent (`-`) in a corresponding dataset.
+The detailed description of dataset variables, tcpdump/Wireshark dissectors and other data is provided in the table below. See columns `DATA` and `CONTROL` to determine whether a variable is present (`✓`) or absent (`-`) in a corresponding dataset.
 
 | Dataset Variable  | Wireshark Dissector    | Description                                                              | DATA       | CONTROL   | Data Type  |
 |:------------------|:-----------------------|:-------------------------------------------------------------------------|:-----------|:----------|:-----------|
@@ -155,11 +155,11 @@ The detailed description of dataset variables, Wireshark dissectors and other da
 | srt.timestamp     | srt.timestamp          | Timestamp since the socket was opened (microseconds)                     | ✓          | ✓         | int64      |
 | srt.id            | srt.id                 | Destination socket id                                                    | ✓          | ✓         | category   |
 | srt.ack_seqno     | srt.ack_seqno          | First unacknowledged sequence number                                     | -          | ✓         | int64      |
-| srt.rtt           | srt.rtt                | Round Trip Time (RTT) estimation (microseconds)                          | -          | ✓         | int64      |
-| srt.rttvar        | srt.rttvar             | The variance of Round Trip Time (RTT) estimation (microseconds)          | -          | ✓         | int64      |
-| srt.rate          | srt.rate               | Receiving speed estimation (packets/s)                                   | -          | ✓         | int64      |
-| srt.bw            | srt.bw                 | Bandwidth estimation (packets/s)                                         | -          | ✓         | int64      |
-| srt.rcvrate       | srt.rcvrate            | Receiving speed estimation (bytes/s)                                     | -          | ✓         | int64      |
+| srt.rtt           | srt.rtt                | Round Trip Time (RTT) estimate (microseconds)                          | -          | ✓         | int64      |
+| srt.rttvar        | srt.rttvar             | The variance of Round Trip Time (RTT) estimate (microseconds)          | -          | ✓         | int64      |
+| srt.rate          | srt.rate               | Receiving speed estimate (packets/s)                                   | -          | ✓         | int64      |
+| srt.bw            | srt.bw                 | Bandwidth estimate (packets/s)                                         | -          | ✓         | int64      |
+| srt.rcvrate       | srt.rcvrate            | Receiving speed estimate (bytes/s)                                     | -          | ✓         | int64      |
 | data.len          | data.len               | Payload size or 0 in case of control packets (bytes)                     | ✓          | -         | int16      |
 | ws.time.us        | -                      | Relative timestamp as registered by Wireshark (microseconds)             | ✓          | -         | int64      |
 | ws.iat.us         | -                      | Packet inter-arrival time (microseconds)                                 | ✓          | -         | int64      |
@@ -168,10 +168,10 @@ The detailed description of dataset variables, Wireshark dissectors and other da
 
 Probing DATA packets are extracted from the DATA packets dataset as follows:
 1. Find all the packet pairs where the latest 4 bits of their sequence numbers (`srt.seqno`) are `0000` and `0001`. The order is important.
-2. For each packet pair, check whether both of packets are sent as `Original` (`srt.msg.rexmit` == 0), not `Retransmitted` (`srt.msg.rexmit` == 1).
-3. For the remain packet pairs, take the packet with sequence number ending with `0001` bits as probing packet.
+2. For each packet pair, check whether both packets are sent as `Original` (`srt.msg.rexmit` == 0), not `Retransmitted` (`srt.msg.rexmit` == 1).
+3. For the remaining packet pairs, take the packet with sequence number ending with `0001` bits as a probing packet.
 
-Here is an example of packet pair where `Frame 25` corresponds to the probing packet
+Here is an example of a packet pair where `Frame 25` corresponds to the probing packet:
 ```
 Frame 24: 1514 bytes on wire (12112 bits), 1500 bytes captured (12000 bits) on interface 0
 Ethernet II, Src: 12:34:56:78:9a:bc (12:34:56:78:9a:bc), Dst: Microsof_59:95:17 (00:0d:3a:59:95:17)
@@ -215,6 +215,10 @@ UMSG_HANDSHAKE CONTROL packets are extracted from the CONTROL packets dataset us
 
 ### UMSG_ACK CONTROL Packets
 
-UMSG_ACK CONTROL packets are extracted from the CONTROL packets dataset as follows: 
+UMSG_ACK CONTROL packets are extracted from the CONTROL packets dataset as follows:
 1. Find all the packets with `srt.type == 0x00000002`.
-2. Drop rows with `NaN` values of `srt.rate`, `srt.bw`, and `srt.rcvrate` variables (so called light acknowledgements).
+2. Drop rows with `NaN` values of `srt.rate`, `srt.bw`, and `srt.rcvrate` variables (so called "light acknowledgements" or "light ACKs").
+
+
+
+[RETURN TO TOP](#lib-tcpdump-processing)

@@ -15,7 +15,7 @@ See [`get-traffic-stats`](#get-traffic-stats) script for details and reports exa
 
 **Known Issue:** There is a known [CEST/CST datetime processing issue](https://github.com/mbakholdina/lib-tcpdump-processing/issues/22) which is going to be addressed soon. Until then please apply the changes from [PR #25](https://github.com/mbakholdina/lib-tcpdump-processing/pull/25) to address the issue.
 
-## Getting Started
+## 1. Getting Started
 
 ### Requirements
 
@@ -69,7 +69,7 @@ or a particular module:
 import tcpdump_processing.extract_packets as extract_packets
 ```
 
-## Executable Scripts
+## 2. Executable Scripts
 
 To use the following scripts, please install the library first (see the [Install the library with pip](#install-the-library-with-pip) section).
 
@@ -138,9 +138,9 @@ Here is an example of the report generated at the receiver side:
 
 ![get_traffic_stats_report_rcv](img/get_traffic_stats_report_rcv.png)
 
-## Data Preparation
+## 3. Data Preparation
 
-A `.pcap(ng)` trace file with measurements from a specific network interface and port collected at the receiver side is used as a proxy for packet data collected by SRT. This trace file is preprocessed in `.csv` format with timestamp, source IP address, destination IP address, protocol, and other columns and rows representing observations (received packets).
+A `.pcap(ng)` trace file with measurements from a specific network interface and port collected at the sender/receiver side is used as a proxy for packet data collected by SRT. This trace file is preprocessed in `.csv` format with timestamp, source IP address, destination IP address, protocol, and other columns and rows representing observations (sent/received packets).
 
 This data is further cleaned and transformed using [pandas](https://pandas.pydata.org/) in the following way:
 1. The data is filtered to extract SRT packets only (`ws.protocol == SRT`), which makes sense for further analysis.

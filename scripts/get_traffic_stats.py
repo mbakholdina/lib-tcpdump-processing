@@ -1,10 +1,10 @@
 """
-Script designed to collect and output network traffic statistics.
+Script designed to process .pcap(ng) files and generate a report
+with network traffic statistics.
 """
 import pathlib
 
 import click
-import pandas as pd
 
 import tcpdump_processing.convert as convert
 import tcpdump_processing.extract_packets as extract_packets
@@ -38,30 +38,40 @@ class TrafficStats:
 	def __init__(self, srt_packets):
 		self.srt_packets = srt_packets
 		self.index = TrafficStatsIndex(srt_packets)
-		self.time_start = srt_packets.iloc[ 0]['ws.time']
-		self.time_stop  = srt_packets.iloc[-1]['ws.time']
-		self.duration_sec  = self.time_start - self.time_stop
+
 
 	def bytes_to_Mbps(self, bytes):
-		return bytes * 8 / self.duration_sec / 1000000
+		return bytes * 8 / self.duration / 1000000
+
 
 	@property
 	def data_pkts(self):
 		return self.srt_packets[self.index.data_pkts]
 
+
 	@property
 	def data_pkts_org(self):
 		return self.srt_packets[self.index.data_pkts_org]
+
 
 	@property
 	def data_pkts_rex(self):
 		return self.srt_packets[self.index.data_pkts_rex]
 
+
 	@property
-	def pkts_ctrl(self):
+	def ctrl_pkts(self):
 		return self.srt_packets[self.index.ctrl_pkts]
 
-	
+
+	@property
+	def duration(self):
+		# Calculate duration in seconds.
+		start    = self.data_pkts.iloc[0]['ws.time']
+		stop      = self.data_pkts.iloc[-1]['ws.time']
+		return (stop - start)
+
+
 	def count_packets(self):
 		# Count the number of packets.
 		pkts          = len(self.srt_packets.index)
@@ -113,12 +123,25 @@ class TrafficStats:
 		}
 
 
+	def print_traffic(self):
+		print(" Traffic ".center(70, "~"))
+
+		print(f"- SRT DATA pkts")
+		print(f"  - SRT payload + SRT hdr + UDP hdr (orig+retrans)  {to_rate(self.data_pkts['udp.length'].sum(), self.duration):>13} Mbps")
+		print(f"  - SRT payload + SRT hdr (orig+retrans)            {to_rate(self.data_pkts['data.len'].sum() + 16 * len(self.data_pkts), self.duration):>13} Mbps")
+		print(f"  - SRT payload (orig+retrans)                      {to_rate(self.data_pkts['data.len'].sum(), self.duration):>13} Mbps")
+		print(f"  - SRT payload + SRT hdr + UDP hdr (orig)          {to_rate(self.data_pkts_org['udp.length'].sum(), self.duration):>13} Mbps")
+		print(f"  - SRT payload + SRT hdr (orig)                    {to_rate(self.data_pkts_org['data.len'].sum() + 16 * len(self.data_pkts_org), self.duration):>13} Mbps")
+		print(f"  - SRT payload (orig)                              {to_rate(self.data_pkts_org['data.len'].sum(), self.duration):>13} Mbps")
+
+
 	def print_notations(self):
 		print(" Notations ".center(70, "~"))
 		print("pkts - packets")
 		print("hdr - header")
 		print("orig - original")
 		print("retrans - retransmitted")
+		print("".center(70, "~"))
 
 
 	def generate_snd_report(self):
@@ -132,7 +155,7 @@ class TrafficStats:
 		print(f"- SRT DATA pkts          {cnt['data_pkts']:>45}")
 
 		print(
-			f"  - Original DATA pkts sent      {cnt['data_pkts_org']:>27}"
+			f"  - Original DATA pkts sent       {cnt['data_pkts_org']:>26}"
 			f" {to_percent(cnt['data_pkts_org'], cnt['data_pkts']):>8}%"
 			"  out of orig+retrans sent DATA pkts"
 		)
@@ -153,34 +176,21 @@ class TrafficStats:
 		print(f"  - ACKACK pkts sent   {cnt['ctrl_pkts_ackack']:>47}")
 		print(f"  - NAK pkts received  {cnt['ctrl_pkts_nak']:>47}")
 
-		print(" Traffic ".center(70, "~"))
+		self.print_traffic()
 
-		sec_begin    = self.data_pkts.iloc[0]['ws.time']
-		sec_end      = self.data_pkts.iloc[-1]['ws.time']
-		duration_sec = sec_end - sec_begin
-
-		print(f"- SRT DATA pkts")
-		print(f"  - SRT payload + SRT hdr + UDP hdr (orig+retrans)  {to_rate(self.data_pkts['udp.length'].sum(), duration_sec):>13} Mbps")
-		print(f"  - SRT payload + SRT hdr (orig+retrans)            {to_rate(self.data_pkts['data.len'].sum() + 16 * len(self.data_pkts), duration_sec):>13} Mbps")
-		print(f"  - SRT payload (orig+retrans)                      {to_rate(self.data_pkts['data.len'].sum(), duration_sec):>13} Mbps")
-		print(f"  - SRT payload + SRT hdr + UDP hdr (orig)          {to_rate(self.data_pkts_org['udp.length'].sum(), duration_sec):>13} Mbps")
-		print(f"  - SRT payload + SRT hdr (orig)                    {to_rate(self.data_pkts_org['data.len'].sum() + 16 * len(self.data_pkts_org), duration_sec):>13} Mbps")
-		print(f"  - SRT payload (orig)                              {to_rate(self.data_pkts_org['data.len'].sum(), duration_sec):>13} Mbps")
-		
 		print(" Overhead ".center(70, "~"))
 
 		print(f"- SRT DATA pkts")
 		print(
 			"  - UDP+SRT headers over SRT payload (orig)"
-			f"{round(to_rate(self.data_pkts_org['udp.length'].sum(), duration_sec) * 100 / to_rate(self.data_pkts_org['data.len'].sum(), duration_sec) - 100, 2):>25} %"
+			f"{round(to_rate(self.data_pkts_org['udp.length'].sum(), self.duration) * 100 / to_rate(self.data_pkts_org['data.len'].sum(), self.duration) - 100, 2):>25} %"
 		)
-		# print(
-		# 	"  - Retransmitted over original (received+lost) pkts"
-		# 	f"{to_percent(data_pkts_rex_cnt, data_pkts_orig_rcvd_lost_cnt):>16} %"
-		# )
+		print(
+			"  - Retransmitted over original sent pkts"
+			f"{to_percent(cnt['data_pkts_rex'], cnt['data_pkts_org']):>27} %"
+		)
 
 		self.print_notations()
-		print("".center(70, "~"))
 
 
 	def generate_rcv_report(self):

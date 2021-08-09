@@ -150,9 +150,9 @@ class TrafficStats:
 
 		print(" SRT Packets ".center(70, "~"))
 
-		print(f"- SRT DATA+CONTROL pkts  {cnt['pkts']:>45}")
+		print(f"- SRT DATA+CONTROL pkts  {cnt['pkts']:>35}")
 
-		print(f"- SRT DATA pkts          {cnt['data_pkts']:>45}")
+		print(f"- SRT DATA pkts          {cnt['data_pkts']:>35}")
 
 		print(
 			f"  - Original DATA pkts sent       {cnt['data_pkts_org']:>26}"
@@ -171,10 +171,10 @@ class TrafficStats:
 		print(f"      4×     {to_str(rexmits_cnt['x4'], rexmits_cnt['x4_total']):>47} {to_percent(rexmits_cnt['x4_total'], cnt['data_pkts']):>8}%")
 		print(f"      5+     {to_str(rexmits_cnt['x5_more'], rexmits_cnt['x5_more_total']):>47} {to_percent(rexmits_cnt['x5_more_total'], cnt['data_pkts']):>8}%")
 
-		print(f"- SRT CONTROL pkts     {cnt['ctrl_pkts']:>47}")
-		print(f"  - ACK pkts received  {cnt['ctrl_pkts_ack']:>47}")
-		print(f"  - ACKACK pkts sent   {cnt['ctrl_pkts_ackack']:>47}")
-		print(f"  - NAK pkts received  {cnt['ctrl_pkts_nak']:>47}")
+		print(f"- SRT CONTROL pkts     {cnt['ctrl_pkts']:>37}")
+		print(f"  - ACK pkts received  {cnt['ctrl_pkts_ack']:>37}")
+		print(f"  - ACKACK pkts sent   {cnt['ctrl_pkts_ackack']:>37}")
+		print(f"  - NAK pkts received  {cnt['ctrl_pkts_nak']:>37}")
 
 		self.print_traffic()
 
@@ -194,16 +194,8 @@ class TrafficStats:
 
 
 	def generate_rcv_report(self):
-		# Count the number of packets.
-		pkts_cnt          = len(self.srt_packets.index)
-		data_pkts_cnt     = self.index.data_pkts.sum()
-		data_pkts_org_cnt = self.index.data_pkts_org.sum()
-		data_pkts_rex_cnt = self.index.data_pkts_rex.sum()
-
-		ctrl_pkts_cnt        = self.index.ctrl_pkts.sum()
-		ctrl_pkts_ack_cnt    = self.index.ctrl_pkts_ack.sum()
-		ctrl_pkts_ackack_cnt = self.index.ctrl_pkts_ackack.sum()
-		ctrl_pkts_nak_cnt    = self.index.ctrl_pkts_nak.sum()
+		cnt = self.count_packets()
+		rexmits_cnt = self.count_retransmissions()
 
 		# Calculate the number of lost original data packets as the number
 		# of original data packets that haven't reached the receiver.
@@ -212,7 +204,7 @@ class TrafficStats:
 		seqnos_org = self.data_pkts_org['srt.seqno'].astype('int32')
 		# Removing duplicates in received original packets.
 		seqnos_org = seqnos_org.drop_duplicates()
-		data_pkts_orig_lost_cnt = int((seqnos_org.diff().dropna() - 1).sum())
+		data_pkts_org_lost_cnt = int((seqnos_org.diff().dropna() - 1).sum())
 
 		# The number of packets considered unrecovered at the receiver.
 		# It means nor original, neither retransmitted packet with
@@ -221,110 +213,73 @@ class TrafficStats:
 		seqnos = seqnos.drop_duplicates().sort_values()
 		data_pkts_unrecovered_cnt = int((seqnos.diff().dropna() - 1).sum())
 
-		# Calculate how much packets were retransmitted once, twice, 3x times, etc.
-		# If there was no dropped packets, rexmits = the number of recovered packets
-		rexmit_pkts              = self.data_pkts_rex.copy()
-		rexmit_pkts['srt.seqno'] = rexmit_pkts['srt.seqno'].astype('int32')
-		rexmit_pkts['seqno']     = rexmit_pkts['srt.seqno']
-		rexmits                  = rexmit_pkts.groupby(['srt.seqno'])['seqno'].count()
-		rex_once_cnt             = rexmits[rexmits == 1].count()
-		rex_twice_cnt            = rexmits[rexmits == 2].count()
-		rex_3x_cnt               = rexmits[rexmits == 3].count()
-		rex_4x_cnt               = rexmits[rexmits == 4].count()
-		rex_5x_more_cnt          = rexmits[rexmits > 4].count()
+		# The number of recovered at the receiver side packets.
+		data_pkts_recovered_cnt = data_pkts_org_lost_cnt - data_pkts_unrecovered_cnt
 
-		def to_percent(value, base):
-			return round(value / base * 100, 2)
-
-		data_pkts_orig_rcvd_lost_cnt = data_pkts_org_cnt + data_pkts_orig_lost_cnt
+		# The number of original DATA packets (received + lost).
+		data_pkts_org_rcvd_lost_cnt = cnt['data_pkts_org'] + data_pkts_org_lost_cnt
 
 		print(" SRT Packets ".center(70, "~"))
 
-		print(f"- SRT DATA+CONTROL pkts           {pkts_cnt:>26}")
+		print(f"- SRT DATA+CONTROL pkts  {cnt['pkts']:>35}")
 
-		print(f"- SRT DATA pkts                   {data_pkts_cnt:>26}")
+		print(f"- SRT DATA pkts          {cnt['data_pkts']:>35}")
+
 		print(
-			f"  - Original DATA pkts received   {data_pkts_org_cnt:>26}"
-			f" {to_percent(data_pkts_org_cnt, data_pkts_cnt):>8}%"
+			f"  - Original DATA pkts received       {cnt['data_pkts_org']:>22}"
+			f" {to_percent(cnt['data_pkts_org'], cnt['data_pkts']):>8}%"
 			"  out of orig+retrans received DATA pkts"
 		)
-		
-		rex_5x_more_total = data_pkts_rex_cnt - (rex_once_cnt + rex_twice_cnt * 2 + rex_3x_cnt * 3 + rex_4x_cnt * 4)
-		tmp = str(rex_once_cnt) + '(' + str(rex_once_cnt) + ')'
-		tmp2 = str(rex_twice_cnt) + '(' + str(rex_twice_cnt * 2) + ')'
-		tmp3 = str(rex_3x_cnt) + '(' + str(rex_3x_cnt * 3) + ')'
-		tmp4 = str(rex_4x_cnt) + '(' + str(rex_4x_cnt * 4) + ')'
-		tmp_5plus = str(rex_5x_more_cnt) + '(' + str(rex_5x_more_total) + ')'
+
 		print(
-			f"  - Retransmitted DATA pkts received       {data_pkts_rex_cnt:>17}"
-			f" {to_percent(data_pkts_rex_cnt, data_pkts_cnt):>8}%"
+			f"  - Retransmitted DATA pkts received  {cnt['data_pkts_rex']:>22}"
+			f" {to_percent(cnt['data_pkts_rex'], cnt['data_pkts']):>8}%"
 			"  out of orig+retrans received DATA pkts"
 		)
-		print(f"      Once   {tmp:>47} {to_percent(rex_once_cnt, data_pkts_cnt):>8}%")
-		print(f"      Twice  {tmp2:>47} {to_percent(rex_twice_cnt * 2, data_pkts_cnt):>8}%")
-		print(f"      3×     {tmp3:>47} {to_percent(rex_3x_cnt * 3, data_pkts_cnt):>8}%")
-		print(f"      4×     {tmp4:>47} {to_percent(rex_4x_cnt * 4, data_pkts_cnt):>8}%")
-		print(f"      5+     {tmp_5plus:>47} {to_percent(rex_5x_more_total, data_pkts_cnt):>8}%")
+		print(f"      Once   {to_str(rexmits_cnt['once'], rexmits_cnt['once']):>47} {to_percent(rexmits_cnt['once'], cnt['data_pkts']):>8}%")
+		print(f"      Twice  {to_str(rexmits_cnt['twice'], rexmits_cnt['twice_total']):>47} {to_percent(rexmits_cnt['twice_total'], cnt['data_pkts']):>8}%")
+		print(f"      3×     {to_str(rexmits_cnt['x3'], rexmits_cnt['x3_total']):>47} {to_percent(rexmits_cnt['x3_total'], cnt['data_pkts']):>8}%")
+		print(f"      4×     {to_str(rexmits_cnt['x4'], rexmits_cnt['x4_total']):>47} {to_percent(rexmits_cnt['x4_total'], cnt['data_pkts']):>8}%")
+		print(f"      5+     {to_str(rexmits_cnt['x5_more'], rexmits_cnt['x5_more_total']):>47} {to_percent(rexmits_cnt['x5_more_total'], cnt['data_pkts']):>8}%")
 
 		# The percentage of original DATA packets lost is calculated out of
 		# original DATA packets (received + lost) which equals sent unique
 		# packets approximately.
-		data_pkts_recovered_cnt = data_pkts_orig_lost_cnt - data_pkts_unrecovered_cnt
 		print(
-			f"  - Original DATA pkts lost       {data_pkts_orig_lost_cnt:>26}"
-			f" {to_percent(data_pkts_orig_lost_cnt, data_pkts_orig_rcvd_lost_cnt):>8}%"
+			f"  - Original DATA pkts lost       {data_pkts_org_lost_cnt:>26}"
+			f" {to_percent(data_pkts_org_lost_cnt, data_pkts_org_rcvd_lost_cnt):>8}%"
 			"  out of orig received+lost DATA pkts"
 		)
 		print(
 			f"      Recovered pkts  {data_pkts_recovered_cnt:>38}"
-			f" {to_percent(data_pkts_recovered_cnt, data_pkts_orig_rcvd_lost_cnt):>8}%"
+			f" {to_percent(data_pkts_recovered_cnt, data_pkts_org_rcvd_lost_cnt):>8}%"
 		)
 		print(
 			f"      Unrecovered pkts  {data_pkts_unrecovered_cnt:>36}"
-			f" {to_percent(data_pkts_unrecovered_cnt, data_pkts_orig_rcvd_lost_cnt):>8}%"
+			f" {to_percent(data_pkts_unrecovered_cnt, data_pkts_org_rcvd_lost_cnt):>8}%"
 		)
 
-		print(f"- SRT CONTROL pkts                {ctrl_pkts_cnt:>26}")
-		print(f"  - ACK pkts sent                 {ctrl_pkts_ack_cnt:>26}")
-		print(f"  - ACKACK pkts received          {ctrl_pkts_ackack_cnt:>26}")
-		print(f"  - NAK pkts sent                 {ctrl_pkts_nak_cnt:>26}")
+		print(f"- SRT CONTROL pkts                {cnt['ctrl_pkts']:>26}")
+		print(f"  - ACK pkts sent                 {cnt['ctrl_pkts_ack']:>26}")
+		print(f"  - ACKACK pkts received          {cnt['ctrl_pkts_ackack']:>26}")
+		print(f"  - NAK pkts sent                 {cnt['ctrl_pkts_nak']:>26}")
 
-		print(" Traffic ".center(70, "~"))
-
-		def to_rate(value, duration):
-			return round(value * 8 / duration / 1000000, 2)
-
-		sec_begin    = self.data_pkts.iloc[0]['ws.time']
-		sec_end      = self.data_pkts.iloc[-1]['ws.time']
-		duration_sec = sec_end - sec_begin
-
-		print(f"- SRT DATA pkts")
-		print(f"  - SRT payload + SRT hdr + UDP hdr (orig+retrans)  {to_rate(self.data_pkts['udp.length'].sum(), duration_sec):>13} Mbps")
-		print(f"  - SRT payload + SRT hdr (orig+retrans)            {to_rate(self.data_pkts['data.len'].sum() + 16 * len(self.data_pkts), duration_sec):>13} Mbps")
-		print(f"  - SRT payload (orig+retrans)                      {to_rate(self.data_pkts['data.len'].sum(), duration_sec):>13} Mbps")
-		print(f"  - SRT payload + SRT hdr + UDP hdr (orig)          {to_rate(self.data_pkts_org['udp.length'].sum(), duration_sec):>13} Mbps")
-		print(f"  - SRT payload + SRT hdr (orig)                    {to_rate(self.data_pkts_org['data.len'].sum() + 16 * len(self.data_pkts_org), duration_sec):>13} Mbps")
-		print(f"  - SRT payload (orig)                              {to_rate(self.data_pkts_org['data.len'].sum(), duration_sec):>13} Mbps")
+		self.print_traffic()
 		
 		print(" Overhead ".center(70, "~"))
 
 		print(f"- SRT DATA pkts")
 		print(
 			"  - UDP+SRT headers over SRT payload (orig)"
-			f"{round(to_rate(self.data_pkts_org['udp.length'].sum(), duration_sec) * 100 / to_rate(self.data_pkts_org['data.len'].sum(), duration_sec) - 100, 2):>25} %"
+			f"{round(to_rate(self.data_pkts_org['udp.length'].sum(), self.duration) * 100 / to_rate(self.data_pkts_org['data.len'].sum(), self.duration) - 100, 2):>25} %"
 		)
 		print(
 			"  - Retransmitted over original (received+lost) pkts"
-			f"{to_percent(data_pkts_rex_cnt, data_pkts_orig_rcvd_lost_cnt):>16} %"
+			f"{to_percent(cnt['data_pkts_rex'], data_pkts_org_rcvd_lost_cnt):>16} %"
 		)
 
-		print(" Notations ".center(70, "~"))
-		print("pkts - packets")
-		print("hdr - header")
-		print("orig - original")
-		print("retrans - retransmitted")
+		self.print_notations()
 
-		print("".center(70, "~"))
 
 @click.command()
 @click.argument(
@@ -332,16 +287,22 @@ class TrafficStats:
 	type=click.Path(exists=True)
 )
 @click.option(
+	'--side',
+	type=click.Choice(['snd', 'rcv'], case_sensitive=False),
+	required=True,
+	help='The side .pcap(ng) file was collected at.'
+)
+@click.option(
 	'--overwrite/--no-overwrite',
 	default=False,
-	help=	'If exists, overwrite the .csv file produced out of the .pcap (or .pcapng) '
-			'tcpdump trace one at the previous iterations of running the script.',
+	help=	'If exists, overwrite the .csv file produced out of the .pcap(ng) '
+			'one at the previous iterations of running the script.',
 	show_default=True
 )
-def main(path, overwrite):
+def main(path, side, overwrite):
 	"""
-	This script parses .pcap or .pcapng tcpdump trace file captured at the receiver side, 
-	collects and outputs network traffic statistics.
+	Script designed to process .pcap(ng) files and generate a report
+	with network traffic statistics.
 	"""
 	# Process tcpdump trace file and get SRT data packets only
 	# (either all data packets or probing packets only)
@@ -362,7 +323,13 @@ def main(path, overwrite):
 		return
 
 	stats = TrafficStats(srt_packets)
-	stats.generate_snd_report()
+
+	if (side == 'snd'):
+		stats.generate_snd_report()
+		return
+	
+	if (side == 'rcv'):
+		stats.generate_rcv_report()
 
 
 if __name__ == '__main__':

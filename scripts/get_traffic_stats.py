@@ -11,7 +11,7 @@ import tcpdump_processing.extract_packets as extract_packets
 
 
 def to_percent(value, base):
-	return round(value / base * 100, 2)
+	return round(value / base * 100, 4)
 
 
 def to_str(first, second):

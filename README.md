@@ -13,8 +13,6 @@ See the [`get-traffic-stats`](#get-traffic-stats) script for details and report 
 
 **Important:** Currently, trace files containing only one flow of data are supported. To support several data flows adjustments will be required.
 
-**Known Issue:** There is a known [CEST/CST datetime processing issue](https://github.com/mbakholdina/lib-tcpdump-processing/issues/22) which is going to be addressed soon. Until then please apply the changes from [PR #25](https://github.com/mbakholdina/lib-tcpdump-processing/pull/25) to address the issue.
-
 ## 1. Getting Started
 
 ### Requirements

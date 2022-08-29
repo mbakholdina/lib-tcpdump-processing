@@ -19,7 +19,8 @@ setup(
     entry_points={
         'console_scripts': [
             'extract-packets = tcpdump_processing.extract_packets:main',
-            'get-traffic-stats = scripts.get_traffic_stats:main'
+            'get-traffic-stats = scripts.get_traffic_stats:main',
+            'plot-snd-timing = scripts.plot_snd_timing:main'
         ],
     },
 )

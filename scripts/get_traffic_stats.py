@@ -207,8 +207,8 @@ class TrafficStats:
 		data_pkts_org_lost_cnt = int((seqnos_org.diff().dropna() - 1).sum())
 
 		# The number of packets considered unrecovered at the receiver.
-		# It means nor original, neither retransmitted packet with
-		# a particular sequence number hasn't reached the destination.
+		# It means neither original, nor re-transmitted packet with
+		# a particular sequence number has reached the destination.
 		seqnos = self.data_pkts['srt.seqno'].astype('int32').copy()
 		seqnos = seqnos.drop_duplicates().sort_values()
 		data_pkts_unrecovered_cnt = int((seqnos.diff().dropna() - 1).sum())

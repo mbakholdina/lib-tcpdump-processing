@@ -1,5 +1,6 @@
 """
-Script designed to collect and output network traffic statistics.
+Script designed to plot delta between packet capture time (Wireshark) and
+SRT packet timestamp.
 """
 import pathlib
 
@@ -32,8 +33,8 @@ class SRTDataIndex:
 )
 def main(path, overwrite):
 	"""
-	This script parses .pcap or .pcapng tcpdump trace file captured at the receiver side, 
-	collects and outputs network traffic statistics.
+	This script parses .pcap or .pcapng tcpdump trace file captured at the receiver side (preferably), 
+	and plots time delta between SRT packet timestamp and packet arrival time captured by Wireshark.
 	"""
 	# Process tcpdump trace file and get SRT data packets only
 	# (either all data packets or probing packets only)
@@ -59,9 +60,8 @@ def main(path, overwrite):
 	df = srt_packets[index.data_pkts_org]
 	df['Delta'] = df['ws.time'] * 1000000 - df['srt.timestamp']
 	print(df)
-	df.plot.scatter(x = 'ws.time', y = 'Delta')
+	df.plot.scatter(x = 'ws.time', xlabel = 'Time, s', y = 'Delta', ylabel = 'TS Delta, µs')
 	plt.show()
-
 
 
 if __name__ == '__main__':

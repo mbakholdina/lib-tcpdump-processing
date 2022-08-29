@@ -72,8 +72,8 @@ class TrafficStats:
 		srt_pkts_data_org_lost = int((seqnos_org.diff() - 1).sum())
 
 		# The number of packets considered missing at the receiver.
-		# It means nor original, neither retransmitted packet with
-		# a particular sequence number hasn't reached the destination
+		# It means neither original, nor re-transmitted packet with
+		# a particular sequence number has reached the destination.
 		seqnos = self.srt_pkts_data['srt.seqno'].astype('int32').copy()
 		seqnos = seqnos.drop_duplicates().sort_values()
 		srt_data_pkts_missing = int((seqnos.diff() - 1).sum())

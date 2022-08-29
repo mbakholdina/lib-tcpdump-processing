@@ -89,6 +89,7 @@ def convert_to_csv(
 		'-e', 'srt.timestamp',
 		'-e', 'srt.id',
 		'-e', 'srt.ack_seqno',
+		'-e', 'srt.bufavail',
 		'-e', 'srt.rtt',
 		'-e', 'srt.rttvar',
 		'-e', 'srt.rate',

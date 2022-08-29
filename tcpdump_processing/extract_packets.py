@@ -75,6 +75,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'srt.timestamp',
 		'srt.id',
 		'srt.ack_seqno',
+		'srt.bufavail',
 		'srt.rtt',
 		'srt.rttvar',
 		'srt.rate',
@@ -100,6 +101,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'float64',		# srt.timestamp
 		'category',		# srt.id
 		'float64',		# srt.ack_seqno
+		'float64',		# srt.bufavail
 		'float64',		# srt.rtt
 		'float64',		# srt.rttvar
 		'float64',		# srt.rate
@@ -111,7 +113,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	columns_types = dict(zip(columns, types))
 	packets = pd.read_csv(filepath, sep=';', dtype=columns_types)
 
-	if len(packets.columns) != 22:
+	if len(packets.columns) != len(columns):
 		raise UnexpectedColumnsNumber(f'Unexpected columns number in .csv file: {filepath}.')
 
 	packets.columns = [
@@ -131,6 +133,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'srt.timestamp',
 		'srt.id',
 		'srt.ack_seqno',
+		'srt.bufavail',
 		'srt.rtt',
 		'srt.rttvar',
 		'srt.rate',

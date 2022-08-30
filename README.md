@@ -136,6 +136,26 @@ Here is an example of the report generated at the receiver side:
 
 ![get_traffic_stats_report_rcv](img/get_traffic_stats_report_rcv.png)
 
+### `plot-snd-timing`
+
+This script plots the delta between packet capture time and SRT packet timestamp based on a network `.pcap(ng)` trace file. Intermediate data is stored in `.csv` format in the same directory as the original file. Both sender and receiver side dumps are supported.
+
+Usage:
+```
+venv/bin/plot-snd-timing [OPTIONS] PATH
+```
+where `PATH` refers to `.pcap(ng)` file.
+
+Options:
+```
+Options:
+  --overwrite / --no-overwrite  If exists, overwrite the .csv file produced
+                                out of the .pcap(ng) one at the previous
+                                iterations of running the script.  [default:
+                                no-overwrite]
+  --help                        Show this message and exit.
+```
+
 ## 3. Data Preparation
 
 A `.pcap(ng)` trace file with measurements from a specific network interface and port collected at the sender/receiver side is used as a proxy for packet data collected by SRT. This trace file is preprocessed in `.csv` format with timestamp, source IP address, destination IP address, protocol, and other columns and rows representing observations (sent/received packets).

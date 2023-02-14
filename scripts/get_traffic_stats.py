@@ -147,6 +147,17 @@ class TrafficStats:
 	def generate_snd_report(self):
 		cnt = self.count_packets()
 		rexmits_cnt = self.count_retransmissions()
+		
+		# Calculate the number of lost original data packets as the number
+		# of original data packets that haven't reached the receiver.
+		# Reordered packets are not taken into account, so if a packet is reordered and
+		# comes later, it will not be included into statistic.
+		seqnos_org = self.data_pkts_org['srt.seqno'].astype('int32')
+		# Removing duplicates in received original packets.
+		seqnos_org = seqnos_org.drop_duplicates()
+		data_pkts_org_lost_cnt = int((seqnos_org.diff().dropna() - 1).sum())
+		# The number of original DATA packets (sent + lost).
+		data_pkts_org_sent_lost_cnt = cnt['data_pkts_org'] + data_pkts_org_lost_cnt
 
 		print(" SRT Packets ".center(70, "~"))
 
@@ -158,6 +169,15 @@ class TrafficStats:
 			f"  - Original DATA pkts sent       {cnt['data_pkts_org']:>26}"
 			f" {to_percent(cnt['data_pkts_org'], cnt['data_pkts']):>8}%"
 			"  out of orig+retrans sent DATA pkts"
+		)
+		
+		# The percentage of original DATA packets lost is calculated out of
+		# original DATA packets (sent + lost) which equals sent unique
+		# packets approximately.
+		print(
+			f"  - Original DATA pkts lost       {data_pkts_org_lost_cnt:>26}"
+			f" {to_percent(data_pkts_org_lost_cnt, data_pkts_org_sent_lost_cnt):>8}%"
+			"  out of orig sent+lost DATA pkts"
 		)
 
 		print(

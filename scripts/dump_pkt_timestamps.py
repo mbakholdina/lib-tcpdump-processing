@@ -1,5 +1,5 @@
 """
-Script to dump SRT timestamps (not Wireshark ws.time) of SRT data packet to to a CSV file
+The script dumps SRT timestamps (not Wireshark ws.time) of SRT data packet to a CSV file
 to be used by srt-xtransmit with the --playback-csv argument.
 """
 import pathlib

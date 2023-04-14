@@ -65,7 +65,7 @@ def main(input, output, overwrite):
 		
 	index = SRTDataIndex(srt_packets)	
 	df = srt_packets[index.data_pkts_org]
-	(df['srt.timestamp'] / 1000000.0).to_csv(output, index=False)
+	(df['srt.timestamp'] / 1000000.0).to_csv(output, index=False, header=False)
 	
 	# TODO: Plotting the histogram of packets by 10 ms bins.
 	# The code below is missing the end time in the arrange() function.

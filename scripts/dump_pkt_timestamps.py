@@ -23,12 +23,10 @@ class SRTDataIndex:
 @click.command()
 @click.argument(
 	'input', 
-	help= 'The pcap file to use as an input.',
 	type=click.Path(exists=True)
 )
 @click.argument(
 	'output',
-	help= 'The output CSV file to be produced.',
 	type=click.Path(exists=False)
 )
 @click.option(
@@ -42,6 +40,10 @@ def main(input, output, overwrite):
 	"""
 	This script parses .pcap or .pcapng tcpdump trace file
 	and outputs all original data packet SRT timestamps (not Wireshark capture time) into a CSV file.
+
+	INPUT is the pcap file to use as an input.
+
+	OUTPUT is the output CSV file to be produced.
 	"""
 	# Process tcpdump trace file and get SRT data packets only
 	# (either all data packets or probing packets only)

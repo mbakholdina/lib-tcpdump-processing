@@ -23,12 +23,10 @@ class SRTDataIndex:
 @click.command()
 @click.argument(
 	'input', 
-	help= 'The pcap file to use as an input.',
 	type=click.Path(exists=True)
 )
 @click.argument(
 	'output',
-	help= 'The output CSV file to be produced.',
 	type=click.Path(exists=False)
 )
 @click.option(

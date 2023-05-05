@@ -17,6 +17,7 @@ class SRTDataIndex:
 		self.ctrl_pkts        = (srt_packets['srt.iscontrol'] == 1)
 		self.data_pkts = (srt_packets['srt.iscontrol'] == 0)
 		self.data_pkts_org = self.data_pkts & (srt_packets['srt.msg.rexmit'] == 0)
+		self.data_pkts_rxt = self.data_pkts & (srt_packets['srt.msg.rexmit'] == 1)
 
 
 @click.command()
@@ -31,7 +32,13 @@ class SRTDataIndex:
 			'tcpdump trace one at the previous iterations of running the script.',
 	show_default=True
 )
-def main(path, overwrite):
+@click.option(
+	'--with-rexmits/--without-rexmits',
+	default=False,
+	help=	'Also show also retransmitted data packets.',
+	show_default=True
+)
+def main(path, overwrite, with_rexmits):
 	"""
 	This script parses .pcap or .pcapng tcpdump trace file captured at the receiver side (preferably), 
 	and plots time delta between SRT packet timestamp and packet arrival time captured by Wireshark.
@@ -55,12 +62,17 @@ def main(path, overwrite):
 		return
 		
 	index = SRTDataIndex(srt_packets)
-	print(srt_packets[index.data_pkts_org])
+	#print(srt_packets[index.data_pkts_org])
 	
 	df = srt_packets[index.data_pkts_org]
 	df['Delta'] = df['ws.time'] * 1000000 - df['srt.timestamp']
-	print(df)
-	df.plot.scatter(x = 'ws.time', xlabel = 'Time, s', y = 'Delta', ylabel = 'TS Delta, µs')
+	
+	#print(df[(df['Delta'] > 200000) & (df['ws.no'] > 165730)])
+	ax1 = df.plot.scatter(x = 'ws.time', xlabel = 'Time, s', y = 'Delta', ylabel = 'TS Delta, µs')
+	if with_rexmits:
+		df_rxt = srt_packets[index.data_pkts_rxt]
+		df_rxt['Delta'] = df_rxt['ws.time'] * 1000000 - df_rxt['srt.timestamp']
+		df_rxt.plot(x = 'ws.time', xlabel = 'Time, s', y = 'Delta', ylabel = 'TS Delta, µs', kind='scatter',color='r', ax=ax1)
 	plt.show()
 
 

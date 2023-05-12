@@ -8,6 +8,7 @@ import enum
 import pathlib
 
 import click
+import dateutil
 import pandas as pd
 
 import tcpdump_processing.convert as convert
@@ -139,10 +140,27 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'data.len'
 	]
 
+	# When adding a combination "offset abbreviation <-> timezone", it's recommended
+	# to add both standard and daylight savings time offsets for each timezone
+	# (like CET and CEST for 'Europe/Berlin')
+	# https://stackoverflow.com/questions/67061724/panda-to-datetime-raises-warning-tzname-cet-identified-but-not-understood
+	tzmapping = {
+		'CET':	dateutil.tz.gettz('Europe/Berlin'),
+		'CEST':	dateutil.tz.gettz('Europe/Berlin')
+	}
+
 	# It's either a dataframe with SRT only packets or an empty dataframe
 	# if there is no SRT packets in packets dataframe
 	srt_packets = packets[packets['ws.protocol'] == 'SRT'].copy()
-	srt_packets['frame.time'] = pd.to_datetime(srt_packets['frame.time'])
+
+	# This is done to convert Windows time offsets into appropriate pandas format
+	# https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/default-time-zones?view=windows-11
+	srt_packets['frame.time'] = srt_packets['frame.time'].str.replace('W. Europe Standard Time', 'CET')
+	srt_packets['frame.time'] = srt_packets['frame.time'].str.replace('W. Europe Daylight Time', 'CEST')
+
+	srt_packets['frame.time'] = srt_packets['frame.time'].apply(dateutil.parser.parse, tzinfos=tzmapping)
+	srt_packets['frame.time'] = srt_packets['frame.time'].dt.tz_convert('UTC')
+
 	srt_packets['srt.iscontrol'] = srt_packets['srt.iscontrol'].astype('int8')
 	srt_packets['srt.timestamp'] = srt_packets['srt.timestamp'].astype('int64')
 	srt_packets['udp.length'] = srt_packets['udp.length'].fillna(0).astype('int16')

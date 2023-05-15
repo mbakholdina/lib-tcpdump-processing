@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 # Dependencies for using the library
 install_requires = [
     'click >=7.0',
-    'pandas >=0.25.1',
+    'pandas >=2.0.1',
     'pathlib >=1.0.1',
 ]
 

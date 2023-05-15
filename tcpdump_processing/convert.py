@@ -49,16 +49,14 @@ def convert_to_csv(
 	if not filepath.exists():
 		raise FileDoesNotExist(filepath)
 
-	filename = filepath.name
-	if not filename.endswith('.pcapng'):
-		if not filename.endswith('.pcap'):
+	suffix = filepath.suffix
+	if not suffix.endswith('.pcapng'):
+		if not suffix.endswith('.pcap'):
 			raise IsNotPcapFile(
 				f'{filepath} does not correspond to .pcapng or .pcap file'
 			)
-	name, _ = filename.split('.')
-	csv_filename = name + '.csv'
-	csv_filepath = filepath.parent / csv_filename
 
+	csv_filepath = filepath.parent / (filepath.stem + '.csv')
 	if csv_filepath.exists() and not overwrite:
 		print(
 			'Skipping .pcapng (or .pcap) tcpdump trace file processing to '

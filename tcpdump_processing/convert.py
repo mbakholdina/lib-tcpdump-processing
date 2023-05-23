@@ -1,4 +1,4 @@
-""" Module designed to convert .pcapng or .pcap tcpdump trace file into .csv one. """
+""" Module designed to convert .pcap(ng) tcpdump trace file into .csv one. """
 
 import pathlib
 import subprocess
@@ -22,18 +22,26 @@ class DirectoryDoesNotExist(Exception):
 
 def convert_to_csv(
 	filepath: pathlib.Path,
-	overwrite: bool=False
+	overwrite: bool=False,
+	decode_as_srt: bool=False,
+	port: str=None
 ) -> pathlib.Path:
 	""" 
-	Convert .pcapng or .pcap tcpdump trace file into .csv one. During conversion,
-	only SRT packets are extracted.
+	Convert .pcap(ng) tcpdump trace file into .csv one. During conversion,
+	by default UDP packets are extracted. If `decode_as_srt` equals True,
+	packets are decoded as SRT on a particular port.
 
 	Attributes:
 		filepath: 
 			:class:`pathlib.Path` path to tcpdump trace file.
 		overwrite:
-			True/False if already existing .csv file should be / should
-			not be overwritten.
+			True if already existing .csv file should be overwritten.
+		decode_as_srt:
+			True if packets should be decoded as SRT packets
+			on a particular port.
+		port:
+			Port on which packets should be decoded as SRT if `decode_as_srt`
+			equals True.
 
 	Returns:
 		:class:`pathlib.Path` path to a result csv file.
@@ -42,7 +50,7 @@ def convert_to_csv(
 		:exc:`FileDoesNotExist` 
 			if `filepath` file does not exist,
 		:exc:`IsNotPcapFile` 
-			if `filepath` does not correspond to .pcapng or .pcap file,
+			if `filepath` does not correspond to .pcap(ng) file,
 		:exc:`PcapProcessingFailed` 
 			if tcpdump trace file .csv file processing was not successful.
 	"""
@@ -53,24 +61,31 @@ def convert_to_csv(
 	if not suffix.endswith('.pcapng'):
 		if not suffix.endswith('.pcap'):
 			raise IsNotPcapFile(
-				f'{filepath} does not correspond to .pcapng or .pcap file'
+				f'{filepath} does not correspond to .pcap(ng) file'
 			)
 
 	csv_filepath = filepath.parent / (filepath.stem + '.csv')
 	if csv_filepath.exists() and not overwrite:
 		print(
-			'Skipping .pcapng (or .pcap) tcpdump trace file processing to '
+			'Skipping .pcap(ng) tcpdump trace file processing to '
 			f'.csv, .csv file already exists: {csv_filepath}.'
 		)
 		return csv_filepath	
 
-	print(f'Processing .pcapng (or .pcap) tcpdump trace file to .csv: {filepath}')
+	print(f'Processing .pcap(ng) tcpdump trace file to .csv: {filepath}')
 	args = [
 		'tshark',
 		'-r', str(filepath),
-		'--disable-protocol', 'udt',	# Disable UDT protocol, otherwise SRT packets will be treated as UDT ones
-		'-Y', 'srt',					# Extract SRT packets only
-		'-T', 'fields', 
+		'--disable-protocol', 'udt',				# Disable UDT protocol, otherwise SRT packets will be treated as UDT ones
+	]
+
+	if decode_as_srt:
+		args += ['-d', f'udp.port=={port},srt']		# Decode UDP packets as SRT on a particular port
+	else:
+		args += ['-Y', 'udp',]						# Decode packets as UDP
+
+	args += [
+		'-T', 'fields',
 		'-e', '_ws.col.No.',
 		'-e', 'frame.time',
 		'-e', '_ws.col.Time',
@@ -80,6 +95,8 @@ def convert_to_csv(
 		'-e', '_ws.col.Length',
 		'-e', '_ws.col.Info',
 		'-e', 'udp.length',
+		'-e', 'udp.srcport',
+		'-e', 'udp.dstport',
 		'-e', 'srt.iscontrol',
 		'-e', 'srt.type',
 		'-e', 'srt.seqno',
@@ -96,11 +113,12 @@ def convert_to_csv(
 		'-E', 'header=y',
 		'-E', 'separator=;',
 	]
+
 	with csv_filepath.open(mode='w') as f:
 		process = subprocess.run(args, stdout=f)	
 		if process.returncode != 0:
 			raise PcapProcessingFailed(
-				'Processing .pcapng (or .pcap) tcpdump trace file to .csv '
+				'Processing .pcap(ng) tcpdump trace file to .csv '
 				f'has failed with the code: {process.returncode}'
 			)
 	print(f'Processing finished: {csv_filepath}')

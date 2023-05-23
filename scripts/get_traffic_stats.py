@@ -6,8 +6,8 @@ import pathlib
 
 import click
 
-import tcpdump_processing.convert as convert
-import tcpdump_processing.extract_packets as extract_packets
+from tcpdump_processing.convert import convert_to_csv
+from tcpdump_processing.extract_packets import extract_srt_packets, UnexpectedColumnsNumber, EmptyCSV, NoUDPPacketsFound, NoSRTPacketsFound
 
 
 def to_percent(value, base):
@@ -299,27 +299,28 @@ class TrafficStats:
 			'one at the previous iterations of running the script.',
 	show_default=True
 )
-def main(path, side, overwrite):
+@click.option(
+	'--port',
+	help=	'Decode packets as SRT on a specified port. '
+			'This option is helpful when there is no SRT handshake in .pcap(ng) file.',
+)
+def main(path, side, overwrite, port):
 	"""
 	Script designed to process .pcap(ng) files and generate a report
 	with network traffic statistics.
 	"""
-	# Process tcpdump trace file and get SRT data packets only
-	# (either all data packets or probing packets only)
-	pcapng_filepath   = pathlib.Path(path)
-	csv_filepath      = convert.convert_to_csv(pcapng_filepath, overwrite)
-	
-	try:
-		srt_packets = extract_packets.extract_srt_packets(csv_filepath)
-	except extract_packets.UnexpectedColumnsNumber as error:
-		print(
-			f'Exception captured: {error} '
-			'Please try running the script with --overwrite option.'
-		)
-		return
+	# Convert .pcap(ng) to .csv tcpdump trace file
+	pcap_filepath = pathlib.Path(path)
+	if port is not None:
+		csv_filepath = convert_to_csv(pcap_filepath, overwrite, True, port)
+	else:
+		csv_filepath = convert_to_csv(pcap_filepath, overwrite)
 
-	if srt_packets.empty:
-		print("No SRT packets found.")
+	# Extract SRT packets
+	try:
+		srt_packets = extract_srt_packets(csv_filepath)
+	except (UnexpectedColumnsNumber, EmptyCSV, NoUDPPacketsFound, NoSRTPacketsFound) as error:
+		print(f'{error}')
 		return
 
 	stats = TrafficStats(srt_packets)

@@ -1,5 +1,5 @@
 """
-Module designed to extract packets of interest out of the .pcapng or .pcap
+Module designed to extract packets of interest out of the .pcap(ng)
 tcpdump trace file. Currently only trace files with one data flow
 are supported.
 """
@@ -35,11 +35,20 @@ PACKET_TYPES = [name for name, member in PacketTypes.__members__.items()]
 class UnexpectedColumnsNumber(Exception):
 	pass
 
+class EmptyCSV(Exception):
+	pass
+
+class NoUDPPacketsFound(Exception):
+	pass
+
+class NoSRTPacketsFound(Exception):
+	pass
+
 
 def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	""" 
 	Extract SRT packets (both DATA and CONTROL) from the .csv
-	tcpdump trace file. 
+	tcpdump trace file.
 
 	Attributes:
 		filepath: 
@@ -53,8 +62,14 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		:exc:`convert.FileDoesNotExist` 
 			if `filepath` file does not exist.
 		:exc: `UnexpectedColumnsNumber`
-			if the .csv tcpdump trace file contains unexpected 
-			number of columns.
+			if .csv file contains unexpected number of columns.
+		:exc: `EmptyCSV`
+			if neither SRT, nor UDP packets are present in .csv file.
+		:exc: `NoUDPPacketsFound`
+			if there is no SRT handshake and there are no UDP packets found in .csv file.
+		:exc: `NoSRTPacketsFound`
+			if there is no SRT handshake, but there are UDP packets found in .csv file.
+			Those UDP packets could be further parsed as SRT ones.
 	"""
 	if not filepath.exists():
 		raise convert.FileDoesNotExist(filepath)
@@ -69,6 +84,8 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'_ws.col.Length',
 		'_ws.col.Info',
 		'udp.length',
+		'udp.srcport',
+		'udp.dstport',
 		'srt.iscontrol',
 		'srt.type',
 		'srt.seqno',
@@ -94,6 +111,8 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'int16',		# _ws.col.Length (ws.length)
 		'object',		# _ws.col.Info (ws.info)
 		'float32',		# udp.length
+		'object',		# ws.srcport
+		'object',		# ws.dstport
 		'float32',		# srt.iscontrol
 		'category',		# srt.type
 		'float64',		# srt.seqno
@@ -113,7 +132,10 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 	packets = pd.read_csv(filepath, sep=';', dtype=columns_types)
 
 	if len(packets.columns) != len(columns):
-		raise UnexpectedColumnsNumber(f'Unexpected columns number in .csv file: {filepath}.')
+		raise UnexpectedColumnsNumber(
+			f'Unexpected columns number in .csv file: {filepath}. '
+			'Try running the script with --overwrite option.'
+		)
 
 	packets.columns = [
 		'ws.no',
@@ -125,6 +147,8 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'ws.length',
 		'ws.info',
 		'udp.length',
+		'udp.srcport',
+		'udp.dstport',
 		'srt.iscontrol',
 		'srt.type',
 		'srt.seqno',
@@ -140,7 +164,42 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'data.len'
 	]
 
-	# When adding a combination "offset abbreviation <-> timezone", it's recommended
+	# Packets dataframe may consist of both SRT and UDP packets, maybe empty as well
+	if packets.empty:
+		raise EmptyCSV(
+			'Neither SRT, nor UDP packets are present in .csv file. '
+			'Sounds like original .pcap(ng) file is empty or consists of non-UDP packets.'
+		)
+
+	srt_packets = packets[packets['ws.protocol'] == 'SRT'].copy()
+
+	if srt_packets.empty:
+		# With a high probability there is no SRT handshake present in the original .pcap(ng) file
+		print(
+			'No SRT packets found in .csv file. '
+			'Sounds like there is no SRT handshake in the original .pcap(ng) file. '
+			'Extracting UDP packets.'
+		)
+
+		udp_packets = packets[packets['ws.protocol'] == 'UDP'].copy()
+
+		if udp_packets.empty:
+			raise NoUDPPacketsFound(
+				'No UDP packets found in .csv file. '
+				'Sounds like there is no UDP packets present in the original .pcap(ng) file.'
+			)
+
+		ports = udp_packets.groupby(['udp.srcport', 'udp.dstport'])['ws.no'].count()
+
+		raise NoSRTPacketsFound(
+			f'There are UDP packets in .csv file on ports: \n{ports}\n'
+			'Try to decode UDP packets as SRT ones by running the script with --port option.'
+		)
+
+	# SRT packets found in .csv file.
+	# TODO: Using ports 'udp.srcport', 'udp.dstport', check that there is only one stream inside
+	
+	# NOTE: When adding a combination "offset abbreviation <-> timezone", it's recommended
 	# to add both standard and daylight savings time offsets for each timezone
 	# (like CET and CEST for 'Europe/Berlin')
 	# https://stackoverflow.com/questions/67061724/panda-to-datetime-raises-warning-tzname-cet-identified-but-not-understood
@@ -149,11 +208,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 		'CEST':	dateutil.tz.gettz('Europe/Berlin')
 	}
 
-	# It's either a dataframe with SRT only packets or an empty dataframe
-	# if there is no SRT packets in packets dataframe
-	srt_packets = packets[packets['ws.protocol'] == 'SRT'].copy()
-
-	# This is done to convert Windows time offsets into appropriate pandas format
+	# NOTE: This is done to convert Windows time offsets into appropriate pandas format
 	# https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/default-time-zones?view=windows-11
 	srt_packets['frame.time'] = srt_packets['frame.time'].str.replace('W. Europe Standard Time', 'CET')
 	srt_packets['frame.time'] = srt_packets['frame.time'].str.replace('W. Europe Daylight Time', 'CEST')
@@ -477,7 +532,7 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 @click.option(
 	'--overwrite/--no-overwrite',
 	default=False,
-	help=	'If exists, overwrite the .csv file produced out of the .pcapng (or .pcap) '
+	help=	'If exists, overwrite the .csv file produced out of the .pcap(ng) '
 			'tcpdump trace one at the previous iterations of running the script.',
 	show_default=True
 )
@@ -487,25 +542,30 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	help='Save dataframe with extracted packets into .csv file.',
 	show_default=True
 )
-def main(path, type, overwrite, save):
+@click.option(
+	'--port',
+	help=	'Decode packets as SRT on a specified port. '
+			'This option is helpful when there is no SRT handshake in .pcap(ng) file.',
+)
+def main(path, type, overwrite, save, port):
 	"""
-	This script parses .pcapng or .pcap tcpdump trace file,
+	This script parses .pcap(ng) tcpdump trace file,
 	saves the output in .csv format nearby the original file, extract packets 
 	of interest and saves the obtained dataframe in .csv format nearby the 
 	original file.
 	"""
-	# Convert .pcapng or .pcap to .csv tcpdump trace file
-	pcap_filepath = pathlib.Path(path)	
-	csv_filepath = convert.convert_to_csv(pcap_filepath, overwrite)
+	# Convert .pcap(ng) to .csv tcpdump trace file
+	pcap_filepath = pathlib.Path(path)
+	if port is not None:
+		csv_filepath = convert.convert_to_csv(pcap_filepath, overwrite, True, port)
+	else:
+		csv_filepath = convert.convert_to_csv(pcap_filepath, overwrite)
 
 	# Extract packets of interest
 	try:
 		srt_packets = extract_srt_packets(csv_filepath)
-	except UnexpectedColumnsNumber as error:
-		print(
-			f'Exception captured: {error} '
-			'Please try running the script with --overwrite option.'
-		)
+	except (UnexpectedColumnsNumber, EmptyCSV, NoUDPPacketsFound, NoSRTPacketsFound) as error:
+		print(f'{error}')
 		return
 
 	if type == PacketTypes.srt.value:

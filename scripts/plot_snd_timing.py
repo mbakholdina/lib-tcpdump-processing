@@ -8,16 +8,16 @@ import click
 import pandas as pd
 import matplotlib.pyplot as plt
 
-import tcpdump_processing.convert as convert
-import tcpdump_processing.extract_packets as extract_packets
+from tcpdump_processing.convert import convert_to_csv
+from tcpdump_processing.extract_packets import extract_srt_packets, UnexpectedColumnsNumber, EmptyCSV, NoUDPPacketsFound, NoSRTPacketsFound
 
 
 class SRTDataIndex:
 	def __init__(self, srt_packets):
-		self.ctrl_pkts        = (srt_packets['srt.iscontrol'] == 1)
-		self.data_pkts = (srt_packets['srt.iscontrol'] == 0)
-		self.data_pkts_org = self.data_pkts & (srt_packets['srt.msg.rexmit'] == 0)
-		self.data_pkts_rxt = self.data_pkts & (srt_packets['srt.msg.rexmit'] == 1)
+		self.ctrl_pkts		= (srt_packets['srt.iscontrol'] == 1)
+		self.data_pkts		= (srt_packets['srt.iscontrol'] == 0)
+		self.data_pkts_org	= self.data_pkts & (srt_packets['srt.msg.rexmit'] == 0)
+		self.data_pkts_rxt	= self.data_pkts & (srt_packets['srt.msg.rexmit'] == 1)
 
 
 @click.command()
@@ -32,39 +32,41 @@ class SRTDataIndex:
 			'tcpdump trace one at the previous iterations of running the script.',
 	show_default=True
 )
+# TODO
 @click.option(
 	'--with-rexmits/--without-rexmits',
 	default=False,
 	help=	'Also show also retransmitted data packets.',
 	show_default=True
 )
-def main(path, overwrite, with_rexmits):
+@click.option(
+	'--port',
+	help=	'Decode packets as SRT on a specified port. '
+			'This option is helpful when there is no SRT handshake in .pcap(ng) file.',
+)
+def main(path, overwrite, with_rexmits, port):
 	"""
 	This script parses .pcap or .pcapng tcpdump trace file captured at the receiver side (preferably), 
 	and plots time delta between SRT packet timestamp and packet arrival time captured by Wireshark.
 	"""
-	# Process tcpdump trace file and get SRT data packets only
-	# (either all data packets or probing packets only)
-	pcapng_filepath   = pathlib.Path(path)
-	csv_filepath      = convert.convert_to_csv(pcapng_filepath, overwrite)
+	# Convert .pcap(ng) to .csv tcpdump trace file
+	pcap_filepath = pathlib.Path(path)
+	if port is not None:
+		csv_filepath = convert_to_csv(pcap_filepath, overwrite, True, port)
+	else:
+		csv_filepath = convert_to_csv(pcap_filepath, overwrite)
 	
+	# Extract SRT packets
 	try:
-		srt_packets = extract_packets.extract_srt_packets(csv_filepath)
-	except extract_packets.UnexpectedColumnsNumber as error:
-		print(
-			f'Exception captured: {error} '
-			'Please try running the script with --overwrite option.'
-		)
-		return
-
-	if srt_packets.empty:
-		print("No SRT packets found.")
+		srt_packets = extract_srt_packets(csv_filepath)
+	except (UnexpectedColumnsNumber, EmptyCSV, NoUDPPacketsFound, NoSRTPacketsFound) as error:
+		print(f'{error}')
 		return
 		
 	index = SRTDataIndex(srt_packets)
-	#print(srt_packets[index.data_pkts_org])
 	
 	df = srt_packets[index.data_pkts_org]
+	print(df[['ws.time', 'srt.timestamp']])
 	df['Delta'] = df['ws.time'] * 1000000 - df['srt.timestamp']
 	
 	#print(df[(df['Delta'] > 200000) & (df['ws.no'] > 165730)])

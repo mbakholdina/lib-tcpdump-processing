@@ -32,11 +32,10 @@ class SRTDataIndex:
 			'tcpdump trace one at the previous iterations of running the script.',
 	show_default=True
 )
-# TODO
 @click.option(
 	'--with-rexmits/--without-rexmits',
 	default=False,
-	help=	'Also show also retransmitted data packets.',
+	help=	'Also show retransmitted data packets.',
 	show_default=True
 )
 @click.option(
@@ -45,6 +44,7 @@ class SRTDataIndex:
 			'This option is helpful when there is no SRT handshake in .pcap(ng) file.',
 )
 def main(path, overwrite, with_rexmits, port):
+	# TODO: rcv side?
 	"""
 	This script parses .pcap or .pcapng tcpdump trace file captured at the receiver side (preferably), 
 	and plots time delta between SRT packet timestamp and packet arrival time captured by Wireshark.
@@ -64,16 +64,33 @@ def main(path, overwrite, with_rexmits, port):
 		return
 		
 	index = SRTDataIndex(srt_packets)
+
+	print(srt_packets[['ws.time', 'srt.timestamp']])
 	
 	df = srt_packets[index.data_pkts_org]
-	print(df[['ws.time', 'srt.timestamp']])
+	
 	df['Delta'] = df['ws.time'] * 1000000 - df['srt.timestamp']
+	print(df[['ws.time', 'srt.timestamp', 'Delta']])
+
+	df['Delta'] = df['Delta'] - df['Delta'].iloc[0]
+
+	print(df[['ws.time', 'srt.timestamp', 'Delta']])
+	# return
 	
 	#print(df[(df['Delta'] > 200000) & (df['ws.no'] > 165730)])
 	ax1 = df.plot.scatter(x = 'ws.time', xlabel = 'Time, s', y = 'Delta', ylabel = 'TS Delta, µs')
+
+
 	if with_rexmits:
 		df_rxt = srt_packets[index.data_pkts_rxt]
+		print(df_rxt[['ws.time', 'srt.timestamp']])
+
 		df_rxt['Delta'] = df_rxt['ws.time'] * 1000000 - df_rxt['srt.timestamp']
+		print(df_rxt[['ws.time', 'srt.timestamp', 'Delta']])
+
+		df_rxt['Delta'] = df_rxt['Delta'] - df_rxt['Delta'].iloc[0]
+		print(df_rxt[['ws.time', 'srt.timestamp', 'Delta']])
+
 		df_rxt.plot(x = 'ws.time', xlabel = 'Time, s', y = 'Delta', ylabel = 'TS Delta, µs', kind='scatter',color='r', ax=ax1)
 	plt.show()
 

@@ -1,5 +1,5 @@
 """
-Script designed to plot delta between packet capture time (Wireshark) and
+Script designed to plot time delta between packet capture time (Wireshark) and
 SRT packet timestamp.
 """
 import pathlib
@@ -44,10 +44,12 @@ class SRTDataIndex:
 			'This option is helpful when there is no SRT handshake in .pcap(ng) file.',
 )
 def main(path, overwrite, with_rexmits, port):
-	# TODO: rcv side?
 	"""
-	This script parses .pcap or .pcapng tcpdump trace file captured at the receiver side (preferably), 
-	and plots time delta between SRT packet timestamp and packet arrival time captured by Wireshark.
+	This script parses .pcap(ng) tcpdump trace file captured at the sender side
+	and plots the time delta between SRT packet timestamp (srt.timestamp) and
+	packet time captured by Wireshark at the sender side (ws.time).
+	This could be done for either SRT original DATA packets only, or both
+	original and retransmitted DATA packets.
 	"""
 	# Convert .pcap(ng) to .csv tcpdump trace file
 	pcap_filepath = pathlib.Path(path)
@@ -64,34 +66,27 @@ def main(path, overwrite, with_rexmits, port):
 		return
 		
 	index = SRTDataIndex(srt_packets)
-
 	print(srt_packets[['ws.time', 'srt.timestamp']])
-	
 	df = srt_packets[index.data_pkts_org]
-	
 	df['Delta'] = df['ws.time'] * 1000000 - df['srt.timestamp']
 	print(df[['ws.time', 'srt.timestamp', 'Delta']])
-
+	# NOTE: The correction on the very first DATA packet is made by means of subtracting
+	# respective time delta from all the whole column.
 	df['Delta'] = df['Delta'] - df['Delta'].iloc[0]
-
 	print(df[['ws.time', 'srt.timestamp', 'Delta']])
-	# return
 	
-	#print(df[(df['Delta'] > 200000) & (df['ws.no'] > 165730)])
-	ax1 = df.plot.scatter(x = 'ws.time', xlabel = 'Time, s', y = 'Delta', ylabel = 'TS Delta, µs')
-
+	ax1 = df.plot.scatter(x = 'ws.time', xlabel = 'Time, s', y = 'Delta', ylabel = 'Time Delta, µs', label='Original')
 
 	if with_rexmits:
 		df_rxt = srt_packets[index.data_pkts_rxt]
 		print(df_rxt[['ws.time', 'srt.timestamp']])
-
 		df_rxt['Delta'] = df_rxt['ws.time'] * 1000000 - df_rxt['srt.timestamp']
 		print(df_rxt[['ws.time', 'srt.timestamp', 'Delta']])
-
 		df_rxt['Delta'] = df_rxt['Delta'] - df_rxt['Delta'].iloc[0]
 		print(df_rxt[['ws.time', 'srt.timestamp', 'Delta']])
 
-		df_rxt.plot(x = 'ws.time', xlabel = 'Time, s', y = 'Delta', ylabel = 'TS Delta, µs', kind='scatter',color='r', ax=ax1)
+		df_rxt.plot(x = 'ws.time', xlabel = 'Time, s', y = 'Delta', ylabel = 'Time Delta, µs', kind='scatter', color='r', label='Retransmitted', ax=ax1)
+
 	plt.show()
 
 

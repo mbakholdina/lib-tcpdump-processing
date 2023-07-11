@@ -193,7 +193,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 
 		raise NoSRTPacketsFound(
 			f'There are UDP packets in .csv file on ports: \n{ports}\n'
-			'Try to decode UDP packets as SRT ones by running the script with --port option.'
+			'Try to decode UDP packets as SRT ones by running the script with --overwrite and --port options.'
 		)
 
 	# SRT packets found in .csv file.

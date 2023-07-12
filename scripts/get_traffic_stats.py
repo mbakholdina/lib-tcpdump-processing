@@ -302,7 +302,8 @@ class TrafficStats:
 @click.option(
 	'--port',
 	help=	'Decode packets as SRT on a specified port. '
-			'This option is helpful when there is no SRT handshake in .pcap(ng) file.',
+			'This option is helpful when there is no SRT handshake in .pcap(ng) file. '
+			'Should be used together with --overwrite option.',
 )
 def main(path, side, overwrite, port):
 	"""

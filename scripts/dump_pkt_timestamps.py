@@ -1,16 +1,13 @@
 """
-The script dumps SRT timestamps (not Wireshark ws.time) of SRT data packet to a CSV file
-to be used by srt-xtransmit with the --playback-csv argument.
+The script dumps SRT timestamps (not Wireshark ws.time) of SRT data packets to a .csv file
+to be used by srt-xtransmit application with the --playback-csv argument.
 """
 import pathlib
 
 import click
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
 
-import tcpdump_processing.convert as convert
-import tcpdump_processing.extract_packets as extract_packets
+from tcpdump_processing.convert import convert_to_csv
+from tcpdump_processing.extract_packets import extract_srt_packets, UnexpectedColumnsNumber, EmptyCSV, NoUDPPacketsFound, NoSRTPacketsFound
 
 
 class SRTDataIndex:
@@ -32,38 +29,38 @@ class SRTDataIndex:
 @click.option(
 	'--overwrite/--no-overwrite',
 	default=False,
-	help=	'If exists, overwrite the .csv file produced out of the .pcap (or .pcapng) '
-			'tcpdump trace one at the previous iterations of running the script.',
+	help=	'If exists, overwrite the .csv file produced out of the .pcap(ng) '
+			'one at the previous iterations of running the script.',
 	show_default=True
 )
-def main(input, output, overwrite):
+@click.option(
+	'--port',
+	help=	'Decode packets as SRT on a specified port. '
+			'This option is helpful when there is no SRT handshake in .pcap(ng) file. '
+			'Should be used together with --overwrite option.'
+)
+def main(input, output, overwrite, port):
 	"""
-	This script parses .pcap or .pcapng tcpdump trace file
-	and outputs all original data packet SRT timestamps (not Wireshark capture time) into a CSV file.
+	This script parses .pcap(ng) tcpdump trace file and outputs all original
+	data packets' SRT timestamps (not Wireshark ws.time) into a .csv file.
 
-	INPUT is the pcap file to use as an input.
+	INPUT is the .pcap(ng) file to use as an input.
 
-	OUTPUT is the output CSV file to be produced.
+	OUTPUT is the output .csv file to be produced.
 	"""
-	# Process tcpdump trace file and get SRT data packets only
-	# (either all data packets or probing packets only)
-	pcapng_filepath   = pathlib.Path(input)
-	csv_filepath      = convert.convert_to_csv(pcapng_filepath, overwrite)
+	pcap_filepath = pathlib.Path(input)
+	if port is not None:
+		csv_filepath = convert_to_csv(pcap_filepath, overwrite, True, port)
+	else:
+		csv_filepath = convert_to_csv(pcap_filepath, overwrite)
 	
 	try:
-		srt_packets = extract_packets.extract_srt_packets(csv_filepath)
-	except extract_packets.UnexpectedColumnsNumber as error:
-		print(
-			f'Exception captured: {error} '
-			'Please try running the script with --overwrite option.'
-		)
-		return
-
-	if srt_packets.empty:
-		print("No SRT packets found.")
+		srt_packets = extract_srt_packets(csv_filepath)
+	except (UnexpectedColumnsNumber, EmptyCSV, NoUDPPacketsFound, NoSRTPacketsFound) as error:
+		print(f'{error}')
 		return
 		
-	index = SRTDataIndex(srt_packets)	
+	index = SRTDataIndex(srt_packets)
 	df = srt_packets[index.data_pkts_org]
 	(df['srt.timestamp'] / 1000000.0).to_csv(output, index=False, header=False)
 	

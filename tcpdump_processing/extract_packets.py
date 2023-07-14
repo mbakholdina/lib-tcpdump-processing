@@ -533,7 +533,7 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	'--overwrite/--no-overwrite',
 	default=False,
 	help=	'If exists, overwrite the .csv file produced out of the .pcap(ng) '
-			'tcpdump trace one at the previous iterations of running the script.',
+			'one at the previous iterations of running the script.',
 	show_default=True
 )
 @click.option(
@@ -546,7 +546,7 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 	'--port',
 	help=	'Decode packets as SRT on a specified port. '
 			'This option is helpful when there is no SRT handshake in .pcap(ng) file. '
-			'Should be used together with --overwrite option.',
+			'Should be used together with --overwrite option.'
 )
 def main(path, type, overwrite, save, port):
 	"""

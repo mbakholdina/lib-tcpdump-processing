@@ -138,7 +138,11 @@ Here is an example of the report generated at the receiver side:
 
 ### `plot-snd-timing`
 
-This script plots the delta between packet capture time and SRT packet timestamp based on a network `.pcap(ng)` trace file. Intermediate data is stored in `.csv` format in the same directory as the original file. Both sender and receiver side dumps are supported.
+This script parses .pcap(ng) tcpdump trace file captured at the sender side
+and plots the time delta between SRT packet timestamp (srt.timestamp) and
+packet time captured by Wireshark at the sender side (ws.time).
+This could be done for either SRT original DATA packets only, or both
+original and retransmitted DATA packets.
 
 Usage:
 ```
@@ -149,11 +153,20 @@ where `PATH` refers to `.pcap(ng)` file.
 Options:
 ```
 Options:
-  --overwrite / --no-overwrite  If exists, overwrite the .csv file produced
-                                out of the .pcap(ng) one at the previous
-                                iterations of running the script.  [default:
-                                no-overwrite]
-  --help                        Show this message and exit.
+  --overwrite / --no-overwrite    If exists, overwrite the .csv file produced
+                                  out of the .pcap(ng) one at the previous
+                                  iterations of running the script.  [default:
+                                  no-overwrite]
+  --with-rexmits / --without-rexmits
+                                  Also show retransmitted data packets.
+                                  [default: without-rexmits]
+  --port TEXT                     Decode packets as SRT on a specified port.
+                                  This option is helpful when there is no SRT
+                                  handshake in .pcap(ng) file. Should be used
+                                  together with --overwrite option.
+  --latency TEXT                  SRT latency, in milliseconds, to plot on a
+                                  graph.
+  --help                          Show this message and exit.
 ```
 
 ## 3. Data Preparation

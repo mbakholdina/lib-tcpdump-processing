@@ -193,7 +193,7 @@ def extract_srt_packets(filepath: pathlib.Path) -> pd.DataFrame:
 
 		raise NoSRTPacketsFound(
 			f'There are UDP packets in .csv file on ports: \n{ports}\n'
-			'Try to decode UDP packets as SRT ones by running the script with --port option.'
+			'Try to decode UDP packets as SRT ones by running the script with --overwrite and --port options.'
 		)
 
 	# SRT packets found in .csv file.
@@ -545,7 +545,8 @@ def extract_umsg_ack_packets(srt_packets: pd.DataFrame) -> pd.DataFrame:
 @click.option(
 	'--port',
 	help=	'Decode packets as SRT on a specified port. '
-			'This option is helpful when there is no SRT handshake in .pcap(ng) file.',
+			'This option is helpful when there is no SRT handshake in .pcap(ng) file. '
+			'Should be used together with --overwrite option.',
 )
 def main(path, type, overwrite, save, port):
 	"""

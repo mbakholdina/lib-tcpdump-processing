@@ -90,15 +90,16 @@ Options:
                                   probing, SRT CONTROL UMSG_HANDSHAKE, or SRT
                                   CONTROL UMSG_ACK packets.  [default:
                                   probing]
-
   --overwrite / --no-overwrite    If exists, overwrite the .csv file produced
-                                  out of the .pcapng (or .pcap) tcpdump trace
-                                  one at the previous iterations of running
-                                  the script.  [default: False]
-
+                                  out of the .pcap(ng) one at the previous
+                                  iterations of running the script.  [default:
+                                  no-overwrite]
   --save / --no-save              Save dataframe with extracted packets into
-                                  .csv file.  [default: False]
-
+                                  .csv file.  [default: no-save]
+  --port TEXT                     Decode packets as SRT on a specified port.
+                                  This option is helpful when there is no SRT
+                                  handshake in .pcap(ng) file. Should be used
+                                  together with --overwrite option.
   --help                          Show this message and exit.
 ```
 
@@ -125,6 +126,10 @@ Options:
                                 out of the .pcap(ng) one at the previous
                                 iterations of running the script.  [default:
                                 no-overwrite]
+  --port TEXT                   Decode packets as SRT on a specified port.
+                                This option is helpful when there is no SRT
+                                handshake in .pcap(ng) file. Should be used
+                                together with --overwrite option.
   --help                        Show this message and exit.
 ```
 
@@ -167,6 +172,31 @@ Options:
   --latency TEXT                  SRT latency, in milliseconds, to plot on a
                                   graph.
   --help                          Show this message and exit.
+```
+
+### `dump-pkt-timestamps`
+
+The script dumps SRT timestamps (not Wireshark ws.time) of SRT data packets to a .csv file
+to be used by [srt-xtransmit](https://github.com/maxsharabayko/srt-xtransmit) application with the `--playback-csv` argument.
+
+Usage:
+```
+dump-pkt-timestamps [OPTIONS] INPUT OUTPUT
+```
+where `INPUT` is the .pcap(ng) file to use as an input, `OUTPUT` is the output .csv file to be produced.
+
+Options:
+```
+Options:
+  --overwrite / --no-overwrite  If exists, overwrite the .csv file produced
+                                out of the .pcap(ng) one at the previous
+                                iterations of running the script.  [default:
+                                no-overwrite]
+  --port TEXT                   Decode packets as SRT on a specified port.
+                                This option is helpful when there is no SRT
+                                handshake in .pcap(ng) file. Should be used
+                                together with --overwrite option.
+  --help                        Show this message and exit.
 ```
 
 ## 3. Data Preparation

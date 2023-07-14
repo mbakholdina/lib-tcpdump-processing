@@ -80,12 +80,13 @@ def main(path, overwrite, with_rexmits, port, latency):
 	org = df[df['srt.msg.rexmit'] == 0]
 	rxt = df[df['srt.msg.rexmit'] == 1]
 
-	ax1 = org.plot.scatter(x = 'ws.time', xlabel = 'Time, s', y = 'delta', ylabel = 'Time Delta, ms', label='Original')
+	fig, ax = plt.subplots()
+	org.plot(x = 'ws.time', xlabel = 'Time, s', y = 'delta', ylabel = 'Time Delta, ms', kind='scatter', label='Original Packets', ax=ax)
 	if with_rexmits:
-		rxt.plot(x = 'ws.time', xlabel = 'Time, s', y = 'delta', ylabel = 'Time Delta, ms', kind='scatter', color='r', label='Retransmitted', ax=ax1)
+		rxt.plot(x = 'ws.time', xlabel = 'Time, s', y = 'delta', ylabel = 'Time Delta, ms', kind='scatter', color='r', label='Retransmitted Packets', ax=ax)
 	if latency:
-		plt.axhline(float(latency), color='g')
-		plt.text(1, float(latency) + 0.05,'SRT latency', color='g')
+		plt.axhline(float(latency), color='g', label='SRT Latency')
+	ax.legend()
 	plt.show()
 
 

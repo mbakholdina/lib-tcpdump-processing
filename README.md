@@ -143,9 +143,9 @@ Here is an example of the report generated at the receiver side:
 
 ### `plot-snd-timing`
 
-This script parses .pcap(ng) tcpdump trace file captured at the sender side
-and plots the time delta between SRT packet timestamp (srt.timestamp) and
-packet time captured by Wireshark at the sender side (ws.time).
+This script parses `.pcap(ng)` tcpdump trace file captured at the sender side
+and plots the time delta between SRT packet timestamp (`srt.timestamp`) and
+packet time captured by Wireshark at the sender side (`ws.time`).
 This could be done for either SRT original DATA packets only, or both
 original and retransmitted DATA packets.
 
@@ -176,14 +176,14 @@ Options:
 
 ### `dump-pkt-timestamps`
 
-The script dumps SRT timestamps (not Wireshark ws.time) of SRT data packets to a .csv file
+The script dumps SRT timestamps (not Wireshark `ws.time`) of SRT data packets to a `.csv` file
 to be used by [srt-xtransmit](https://github.com/maxsharabayko/srt-xtransmit) application with the `--playback-csv` argument.
 
 Usage:
 ```
 dump-pkt-timestamps [OPTIONS] INPUT OUTPUT
 ```
-where `INPUT` is the .pcap(ng) file to use as an input, `OUTPUT` is the output .csv file to be produced.
+where `INPUT` is the `.pcap(ng)` file to use as an input, `OUTPUT` is the output `.csv` file to be produced.
 
 Options:
 ```

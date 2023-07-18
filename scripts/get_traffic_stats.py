@@ -5,6 +5,7 @@ with network traffic statistics.
 import pathlib
 
 import click
+import pandas as pd
 
 from tcpdump_processing.convert import convert_to_csv
 from tcpdump_processing.extract_packets import extract_srt_packets, UnexpectedColumnsNumber, EmptyCSV, NoUDPPacketsFound, NoSRTPacketsFound
@@ -227,7 +228,7 @@ class TrafficStats:
 		seqnos = self.data_pkts['srt.seqno'].astype('int32').copy()
 		seqnos = seqnos.drop_duplicates().sort_values()
 		data_pkts_unrecovered_cnt = int((seqnos.diff().dropna() - 1).sum())
-
+		
 		# The number of recovered at the receiver side packets.
 		data_pkts_recovered_cnt = data_pkts_org_lost_cnt - data_pkts_unrecovered_cnt
 
@@ -296,6 +297,39 @@ class TrafficStats:
 		self.print_notations()
 
 
+	def show_unrecovered_packets(self, parent, stem):
+		# Show and save to file sequence numbers of unrecovered at the
+		# receiver side packets.
+
+		# The number of packets considered unrecovered at the receiver.
+		# It means neither original, nor re-transmitted packet with
+		# a particular sequence number has reached the destination.
+		seqnos = self.data_pkts['srt.seqno'].astype('int32').copy()
+		seqnos = seqnos.drop_duplicates().sort_values()
+
+		# Get sequence numbers of unrecovered packets.
+		df = pd.DataFrame(seqnos)
+		df['diff'] = df['srt.seqno'].diff()
+		df.dropna(inplace=True)
+		df['diff'] = df['diff'].astype('int32') - 1
+		df = df[df['diff'] != 0]
+		df['start'] = df['srt.seqno'] - df['diff']
+
+		list_unrec = df[['diff', 'start']].values.tolist()
+
+		unrec_pkts_seqnos = []
+		for sublist in list_unrec:
+			diff, start = sublist
+			for i in range(0, diff):
+				unrec_pkts_seqnos.append(start + i)
+
+		unrec_pkts_seqnos = pd.Series(unrec_pkts_seqnos)
+		path_unrec = parent / (stem + '-unrec-pkts-seqnos.csv')
+		unrec_pkts_seqnos.to_csv(path_unrec)
+		print(f'\nUnrecovered at the receiver side packets have the following sequence numbers. They are stored in {path_unrec} file.')
+		print(unrec_pkts_seqnos)
+
+
 @click.command()
 @click.argument(
 	'path', 
@@ -315,12 +349,19 @@ class TrafficStats:
 	show_default=True
 )
 @click.option(
+	'--show-unrec-pkts/--no-show-unrec-pkts',
+	default=False,
+	help=	'Show sequence numbers of unrecovered at the receiver side '
+			'packets. Save the list of sequence numbers into respective .csv file.',
+	show_default=True
+)
+@click.option(
 	'--port',
 	help=	'Decode packets as SRT on a specified port. '
 			'This option is helpful when there is no SRT handshake in .pcap(ng) file. '
 			'Should be used together with --overwrite option.'
 )
-def main(path, side, overwrite, port):
+def main(path, side, overwrite, show_unrec_pkts, port):
 	"""
 	Script designed to process .pcap(ng) files and generate a report
 	with network traffic statistics.
@@ -347,6 +388,8 @@ def main(path, side, overwrite, port):
 	
 	if (side == 'rcv'):
 		stats.generate_rcv_report()
+		if (show_unrec_pkts):
+			stats.show_unrecovered_packets(pathlib.Path(path).parent, pathlib.Path(path).stem)
 
 
 if __name__ == '__main__':

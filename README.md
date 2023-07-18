@@ -126,6 +126,11 @@ Options:
                                 out of the .pcap(ng) one at the previous
                                 iterations of running the script.  [default:
                                 no-overwrite]
+  --show-unrec-pkts / --no-show-unrec-pkts
+                                Show sequence numbers of unrecovered at the
+                                receiver side packets. Save the list of
+                                sequence numbers into respective .csv file.
+                                [default: no-show-unrec-pkts]
   --port TEXT                   Decode packets as SRT on a specified port.
                                 This option is helpful when there is no SRT
                                 handshake in .pcap(ng) file. Should be used

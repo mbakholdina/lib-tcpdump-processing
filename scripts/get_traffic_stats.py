@@ -148,6 +148,15 @@ class TrafficStats:
 		cnt = self.count_packets()
 		rexmits_cnt = self.count_retransmissions()
 
+		# Calculate the number of missing in the dump original data packets
+		# that were either dropped by the SRT sender, or UDP socket.
+		# Reordered packets are not taken into account, so if a packet is reordered and
+		# comes later, it will not be included into statistic.
+		seqnos_org = self.data_pkts_org['srt.seqno'].astype('int32')
+		# Removing duplicates in sent original packets.
+		seqnos_org = seqnos_org.drop_duplicates()
+		data_pkts_org_missing_cnt = int((seqnos_org.diff().dropna() - 1).sum())
+
 		print(" SRT Packets ".center(70, "~"))
 
 		print(f"- SRT DATA+CONTROL pkts  {cnt['pkts']:>35}")
@@ -170,6 +179,12 @@ class TrafficStats:
 		print(f"      3×     {to_str(rexmits_cnt['x3'], rexmits_cnt['x3_total']):>47} {to_percent(rexmits_cnt['x3_total'], cnt['data_pkts']):>8}%")
 		print(f"      4×     {to_str(rexmits_cnt['x4'], rexmits_cnt['x4_total']):>47} {to_percent(rexmits_cnt['x4_total'], cnt['data_pkts']):>8}%")
 		print(f"      5+     {to_str(rexmits_cnt['x5_more'], rexmits_cnt['x5_more_total']):>47} {to_percent(rexmits_cnt['x5_more_total'], cnt['data_pkts']):>8}%")
+
+		print(
+			f"- Original DATA pkts missing       {data_pkts_org_missing_cnt:>25}"
+			f" {to_percent(data_pkts_org_missing_cnt, (cnt['data_pkts_org']+data_pkts_org_missing_cnt)):>8}%"
+			"  out of orig sent+missing DATA pkts"
+		)
 
 		print(f"- SRT CONTROL pkts     {cnt['ctrl_pkts']:>37}")
 		print(f"  - ACK pkts received  {cnt['ctrl_pkts_ack']:>37}")
@@ -205,7 +220,7 @@ class TrafficStats:
 		# Removing duplicates in received original packets.
 		seqnos_org = seqnos_org.drop_duplicates()
 		data_pkts_org_lost_cnt = int((seqnos_org.diff().dropna() - 1).sum())
-
+		
 		# The number of packets considered unrecovered at the receiver.
 		# It means neither original, nor re-transmitted packet with
 		# a particular sequence number has reached the destination.

@@ -11,7 +11,7 @@ install_requires = [
 
 setup(
     name='lib-tcpdump-processing',
-    version='0.1',
+    version='0.2',
     author='Maria Sharabayko',
     author_email='maria.bakholdina@gmail.com',
     packages=find_packages(),

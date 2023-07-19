@@ -262,16 +262,16 @@ class TrafficStats:
 		# original DATA packets (received + lost) which equals sent unique
 		# packets approximately.
 		print(
-			f"  - Original DATA pkts lost       {data_pkts_org_lost_cnt:>26}"
+			f"- Original DATA pkts lost       {data_pkts_org_lost_cnt:>28}"
 			f" {to_percent(data_pkts_org_lost_cnt, data_pkts_org_rcvd_lost_cnt):>8}%"
 			"  out of orig received+lost DATA pkts"
 		)
 		print(
-			f"      Recovered pkts  {data_pkts_recovered_cnt:>38}"
+			f"  - Recovered pkts  {data_pkts_recovered_cnt:>40}"
 			f" {to_percent(data_pkts_recovered_cnt, data_pkts_org_rcvd_lost_cnt):>8}%"
 		)
 		print(
-			f"      Unrecovered pkts  {data_pkts_unrecovered_cnt:>36}"
+			f"  - Unrecovered pkts  {data_pkts_unrecovered_cnt:>38}"
 			f" {to_percent(data_pkts_unrecovered_cnt, data_pkts_org_rcvd_lost_cnt):>8}%"
 		)
 
